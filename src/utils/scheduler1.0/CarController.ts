@@ -1,0 +1,275 @@
+import type { CarTask } from '@/types'
+import type { PortDevice } from './PortDevice.ts'
+
+// 小车控制器类
+export class CarController {
+  public id: number // 小车ID
+  public position: number = 0 // 当前位置（米）
+  public speed: number = 0 // 当前速度（米/秒）
+  public acceleration: number = 0 // 当前加速度
+  public targetSpeed: number = 0 // 目标速度
+  public status: 'idle' | 'moving' | 'loading' | 'loaded' | 'unloading' | 'waiting' | 'cruising' =
+    'idle' // 当前状态
+  public task: CarTask | null = null // 当前任务
+
+  public portFrom: PortDevice | null = null
+  public portTo: PortDevice | null = null
+  public deviceMap: Map<number, PortDevice> // 设备映射表
+  private stopPoints: number[] = [] // 停靠点数组
+  private currentStopIndex = 0 // 当前停靠点索引
+
+  // 弯道区间
+  private curveRanges: [number, number][] = [
+    [0, 9.739],
+    [49.739, 59.478],
+  ]
+  private maxCurveSpeed = 0.67
+  private maxStraightSpeed = 2.67
+
+  // 环形轨道总长度（可根据实际轨道长度调整）
+  private trackLength = 99.478
+
+  constructor(id: number, deviceMap: Map<number, PortDevice>, initialPosition = 0) {
+    this.id = id
+    this.deviceMap = deviceMap
+    this.position = initialPosition
+  }
+
+  // 判断当前位置是否在弯道
+  private inCurve(pos: number): boolean {
+    return this.curveRanges.some(([start, end]) => pos >= start && pos <= end)
+  }
+
+  // 获取下一个弯道的起点距离当前位置的距离（正向）
+  private getNextCurveDistance(pos: number): number | null {
+    const direction = Math.sign(this.stopPoints[this.currentStopIndex] - pos)
+    let minDist: number | null = null
+    for (const [start, end] of this.curveRanges) {
+      let dist = (start - pos) * direction
+      if (dist > 0 && (minDist === null || dist < minDist)) {
+        minDist = dist
+      }
+    }
+    return minDist
+  }
+
+  // 更新小车状态
+  public update(deltaTime: number) {
+    // 新增：空闲时自动巡航
+    if (this.status === 'idle' && !this.task) {
+      this.status = 'cruising'
+      this.targetSpeed = this.maxStraightSpeed
+      // 巡航目标点为当前位置顺时针一圈
+      this.stopPoints = [((this.position + this.trackLength) % this.trackLength)]
+      this.currentStopIndex = 0
+    }
+
+    if (this.status === 'moving' || this.status === 'cruising') {
+      this.updateMotion(deltaTime)
+
+      // 到达目标点且速度为0
+      if (this.reachedTarget() && this.speed === 0) {
+        if (this.status === 'cruising') {
+          // 到达一圈终点后继续巡航
+          this.stopPoints = [((this.position + this.trackLength) % this.trackLength)]
+          this.currentStopIndex = 0
+          this.setTarget(this.stopPoints[0])
+          this.targetSpeed = this.maxStraightSpeed
+          // 保持cruising状态
+          return
+        }
+
+        const deviceId = this.currentStopIndex === 0 ? this.task?.fromDevice : this.task?.toDevice
+        const device = this.deviceMap.get(deviceId!)
+
+        if (!device && !this.task) {
+          // 巡航模式：到达终点后状态设为idle
+          this.status = 'idle'
+          this.targetSpeed = 0
+          this.stopPoints = []
+          this.currentStopIndex = 0
+          return
+        }
+
+        if (!device) return
+
+        // STEP 1：装货点检查设备状态
+        if (this.currentStopIndex === 0) {
+          if (device.status === 'full') {
+            console.log(`[Car ${this.id}] 到达 ${device.id} 开始装货`)
+            this.status = 'loading'
+            device.hasCargo = false
+            device.status = 'idle'
+            setTimeout(() => {              
+              this.status = 'loaded'
+              this.currentStopIndex++
+              this.setTarget(this.stopPoints[1])
+              this.status = 'moving'
+            }, 7500)
+          } else {
+            // 等设备准备好再装货
+            this.status = 'waiting'
+            console.log(`[Car ${this.id}] 等待 ${device.id} 准备好装货`)
+          }
+        }
+
+        // STEP 2：卸货点是否能接收
+        else if (this.currentStopIndex === 1) {
+          if (device.status === 'idle') {
+            console.log(`[Car ${this.id}] 到达 ${device.id} 开始卸货`)
+            this.status = 'unloading'
+            device.startOperation('unloading', this.task?.type === '出库' ? 30 : 25)
+
+            setTimeout(() => {
+              this.status = 'idle'
+              this.task = null
+              this.stopPoints = []
+              this.currentStopIndex = 0
+            }, 7500)
+          } else {
+            this.status = 'waiting'
+          }
+        }
+      }
+    }
+  }
+
+  // 更新小车运动状态
+  private updateMotion(dt: number) {
+    // 判断当前位置是否在弯道，限制最大速度
+    let maxSpeed = this.inCurve(this.position) ? this.maxCurveSpeed : this.maxStraightSpeed
+
+    // 预判刹车距离
+    const distToStop = Math.abs(this.stopPoints[this.currentStopIndex] - this.position)
+    const brakingDistance = this.speed ** 2 / (2 * 0.5) // 假设最大减速度为0.5 m/s²
+    if (distToStop < brakingDistance) this.targetSpeed = 0
+
+    // 弯道限速提前减速
+    if (!this.inCurve(this.position)) {
+      // 计算到下一个弯道的距离
+      const nextCurveDist = this.getNextCurveDistance(this.position)
+      if (nextCurveDist !== null && nextCurveDist > 0) {
+        const curveBrakingDistance = (this.speed ** 2 - this.maxCurveSpeed ** 2) / (2 * 0.5)
+        if (nextCurveDist < curveBrakingDistance) {
+          // 需要提前减速到弯道限速
+          maxSpeed = Math.min(maxSpeed, this.maxCurveSpeed)
+          console.log('提前减速' + this.position)
+        }
+      }
+    }
+
+    // 加减速控制
+    let target = Math.min(this.targetSpeed, maxSpeed)
+    if (this.speed < target) {
+      this.speed = Math.min(this.speed + 0.5 * dt, target)
+    } else if (this.speed > target) {
+      this.speed = Math.max(this.speed - 0.5 * dt, target)
+    }
+
+    this.position += this.speed * dt // 更新位置
+
+    // 环形轨道处理
+    if (this.position >= this.trackLength) {
+      this.position -= this.trackLength
+    } else if (this.position < 0) {
+      this.position += this.trackLength
+    }
+  }
+
+  // 判断是否到达目标点
+  private reachedTarget(): boolean {
+    const target = this.stopPoints[this.currentStopIndex]
+    // 环形轨道下的距离判断
+    const dist = Math.abs(
+      ((this.position - target + this.trackLength / 2) % this.trackLength) - this.trackLength / 2,
+    )
+    return dist < 0.05
+  }
+
+  // 设置目标点
+  private setTarget(pos: number) {
+    this.targetSpeed = this.maxStraightSpeed // 直道最大速度
+    this.stopPoints[this.currentStopIndex] = pos
+  }
+
+  // 分配任务
+  public assignTask(task: CarTask, fromPos: number, toPos: number) {
+    this.task = task
+    this.stopPoints = [fromPos, toPos]
+    this.currentStopIndex = 0
+    this.setTarget(fromPos)
+    this.status = 'moving'
+    this.portFrom = this.deviceMap.get(task.fromDevice)!
+    this.portTo = this.deviceMap.get(task.toDevice)!
+    const portFrom = this.deviceMap.get(task.fromDevice)!
+    const portTo = this.deviceMap.get(task.toDevice)!
+    // 分配任务时，若起点是出库接口设备且空闲，触发堆垛机上货
+    if (portFrom.type === 'out-interface' && !portFrom.hasCargo && portFrom.status === 'idle') {
+      portFrom.startOperation('loading', 50) // 堆垛机上货50秒
+      console.log('堆垛机上货');
+      
+    }
+    // 分配任务时，若终点是入库接口设备且空闲，触发等待堆垛机取货
+    if (portTo.type === 'in-interface' && !portTo.hasCargo && portTo.status === 'idle') {
+      // 这里不需要立即触发，等小车送到后再触发
+    }
+    // 分配任务时，若起点是入库口且空闲，触发人工上货
+    if (portFrom.type === 'inlet' && !portFrom.hasCargo && portFrom.status === 'idle') {
+      portFrom.startOperation('loading', 30) // 人工上货30秒
+      console.log('人工上货');
+    }
+    // 分配任务时，若终点是出库口且有货，触发人工卸货
+    if (portTo.type === 'outlet' && portTo.hasCargo && portTo.status === 'idle') {
+      portTo.startOperation('unloading', 30) // 人工卸货30秒
+      console.log('人工卸货');
+    }
+  }
+
+  // 判断等待是否结束
+  public tryResume() {
+    if (!this.task || this.status !== 'waiting') return
+
+    const deviceId = this.currentStopIndex === 0 ? this.task.fromDevice : this.task.toDevice
+    const device = this.deviceMap.get(deviceId!)
+    if (!device) return
+
+    if (this.currentStopIndex === 0 && device.status === 'full') {
+      // same as loading block...
+    }
+    if (this.currentStopIndex === 1 && device.status === 'idle') {
+      // same as unloading block...
+    }
+  }
+  // 获取显示属性
+  public getDisplayProps() {
+    return {
+      positionInMeters: this.position,
+      status: this.status,
+    }
+  }
+
+  // 获取当前位置
+  public getPosition(): number {
+    return this.position
+  }
+
+  // 获取当前速度
+  public getSpeed(): number {
+    return this.speed
+  }
+
+  // 获取当前状态
+  public getStatus(): string {
+    return this.status
+  }
+
+  // 设置目标速度
+  public setTargetSpeed(v: number) {
+    this.targetSpeed = Math.min(v, this.maxStraightSpeed)
+  }
+
+  // 计算与另一辆小车的距离（环形轨道）
+  public getDistanceTo(car: CarController, trackLength: number): number {
+    return (car.position - this.position + trackLength) % trackLength
+  }
+}
