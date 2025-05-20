@@ -2,7 +2,7 @@
   <div class="w-[60vw] h-[90vh] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
     <dv-border-box1 class="">
       <div class="rounded-2xl overflow-hidden h-full bg-slate-800 flex flex-col items-center">
-        <el-image src="/images/sense.png" class="mb-4 h-[30%]"></el-image>
+        <el-image src="/images/sense.png" class="mb-4 h-[30%] w-full"></el-image>
         <!-- 表格 -->
         <div class="w-full h-[70%] flex flex-col items-center">
           <el-scrollbar class="w-full h-[70%]">
@@ -16,18 +16,10 @@
               >
                 <el-form-item label="小车数量">
                   <el-input
-                    v-model="carList.carCount"
+                    v-model="carCount"
                     type="number"
                     min="1"
                     placeholder="请输入小车数量"
-                  />
-                </el-form-item>
-                <el-form-item label="小车位置">
-                  <el-input
-                    v-model="carList.allPos"
-                    type="number"
-                    min="1"
-                    placeholder="请输入小车位置"
                   />
                 </el-form-item>
                 <div v-for="(item, index) in tastList" :key="index">
@@ -62,7 +54,7 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import store from '@/store'
 
@@ -83,18 +75,10 @@ interface TaskItem {
   createTime: number
 }
 
-const carList = reactive({
-  carCount: 1,
-  allPos: 0,
-  carPos: [
-    {
-      id: 1,
-      position: 0,
-    },
-  ],
-})
+
+const carCount = ref(1)
 const setTast = (value: any) => store.commit('setTestList', value)
-const setCarList = (value: any) => store.commit('setCarList', value)
+const setCarCount = (value: any) => store.commit('setCarCount', value)
 const tastList = reactive<TaskItem[]>([
   {
     taskId: 1,
@@ -118,7 +102,8 @@ const addTask = () => {
 }
 const beginSystem = () => {
   setTast(tastList)
-  setCarList(carList)
+  setCarCount(carCount.value)
+  
   changeVis(false)
   router.push('/scene')
 }

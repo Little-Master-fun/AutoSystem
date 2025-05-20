@@ -1,13 +1,13 @@
 export interface CarTask {
   taskId: number
   materialId: number
-  type: '入库' | '出库'
+  type: '入库' | '出库' | '巡航'
   fromDevice: number
   toDevice: number
   desiredSpeed?: number // 可选
 }
 
-export type TaskType = '入库' | '出库'
+export type TaskType = '入库' | '出库' | '巡航'
 
 export interface CarTask {
   taskId: number

@@ -58,7 +58,34 @@ export class Scheduler {
 
     }
   }
+  // 计算小车到达目标位置的时间
+  private calculateTimeToTarget(car: CarController, targetPos: number): number {
+    // 直接计算当前位置到目标位置的距离
+    const distance = (targetPos - car.getPosition() + this.trackLength) % this.trackLength
+    const speed = car.getSpeed()
+    const time = distance / speed
+    return time
+  }
 
+  // 输出任务详细
+  public getTaskDetails() {
+    return this.taskQueue.map((task) => ({
+      taskId: task.taskId,
+      fromDevice: task.fromDevice,
+      toDevice: task.toDevice,
+      createTime: task.createTime,
+      progress: (() => {
+        const car = this.cars.find(c => c.task?.taskId === task.taskId)
+        if (!car) return 0
+        const fromPos = this.deviceToPosition(task.fromDevice)
+        const toPos = this.deviceToPosition(task.toDevice)
+        const totalDist = (toPos - fromPos + this.trackLength) % this.trackLength
+        const carPos = car.getPosition()
+        const traveled = (carPos - fromPos + this.trackLength) % this.trackLength
+        return totalDist === 0 ? 1 : Math.min(traveled / totalDist, 1)
+      })()
+    }))
+  }
   // 设备编号 → 轨道坐标映射
   private deviceToPosition(deviceId: number): number {
     const map: Record<number, number> = {

@@ -62,10 +62,8 @@ const config = reactive({
 })
 
 const mouseoverHandler = (e: any) => {
-  console.log(e)
 }
 
 const clickHandler = (e: any) => {
-  console.log(e)
 }
 </script>

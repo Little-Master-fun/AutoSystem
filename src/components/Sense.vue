@@ -35,6 +35,19 @@ import Station from './tres/Station.vue'
 
 //轨道设置函数
 const trackPoints = inittrackinner()
+const carCount = computed(() => store.state.carCount)
+
+
+const deviceMap = getDeviceMap()
+
+const controller = computed(() => {
+  const arr: CarController[] = []
+  for (let i = 0; i < carCount.value; i++) {
+    arr.push(new CarController(i + 1, deviceMap, 73.47 + i * 2.2))
+  }
+  return arr
+})
+const controllers = controller.value
 
 //场景渲染设置
 const gl = {
@@ -47,12 +60,13 @@ const gl = {
 }
 
 //设置出入库点
-const deviceMap = getDeviceMap()
 const allDevices = getAllDevices()
 
-const trackpoints = inittrackocar()
 const status = ref<{ id: number; positionInMeters: number; status: string }[]>([])
-const controllers = [new CarController(1, deviceMap, 0), new CarController(1, deviceMap, 10)]
+// const controllers = [new CarController(1, deviceMap, 0), new CarController(1, deviceMap, 10)]
+// 上传全局状态
+store.commit('setControllers', controllers)
+
 const stationPos = allDevices
   .map((device) => {
     const station = deviceMap.get(device.id)
@@ -115,6 +129,8 @@ scheduler.addTask({
   toDevice: 1,
   createTime: Date.now(),
 })
+
+store.commit('setScheduler', scheduler)
 
 let lastTime = performance.now()
 

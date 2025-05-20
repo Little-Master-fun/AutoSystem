@@ -56,16 +56,17 @@ export class CarController {
   // 更新小车状态
   public update(deltaTime: number) {
     // 新增：空闲时自动巡航
+    // 巡航时也遵循避障、弯道减速等规则
     if (this.status === 'idle' && !this.task) {
       this.status = 'cruising'
       this.targetSpeed = this.maxStraightSpeed
       // 巡航目标点为当前位置顺时针一圈
       this.stopPoints = [((this.position + this.trackLength) % this.trackLength)]
       this.currentStopIndex = 0
+      this.updateMotion(deltaTime)
     }
 
     if (this.status === 'moving' || this.status === 'cruising') {
-      this.updateMotion(deltaTime)
 
       // 到达目标点且速度为0
       if (this.reachedTarget() && this.speed === 0) {
@@ -131,6 +132,8 @@ export class CarController {
           }
         }
       }
+      this.updateMotion(deltaTime)
+
     }
   }
 
@@ -140,20 +143,32 @@ export class CarController {
     let maxSpeed = this.inCurve(this.position) ? this.maxCurveSpeed : this.maxStraightSpeed
 
     // 预判刹车距离
-    const distToStop = Math.abs(this.stopPoints[this.currentStopIndex] - this.position)
+    const targetPos = this.stopPoints[this.currentStopIndex]
+    // 环形距离
+    const distToStop = Math.abs(
+      ((targetPos - this.position + this.trackLength / 2) % this.trackLength) - this.trackLength / 2,
+    )
     const brakingDistance = this.speed ** 2 / (2 * 0.5) // 假设最大减速度为0.5 m/s²
     if (distToStop < brakingDistance) this.targetSpeed = 0
 
     // 弯道限速提前减速
     if (!this.inCurve(this.position)) {
-      // 计算到下一个弯道的距离
-      const nextCurveDist = this.getNextCurveDistance(this.position)
-      if (nextCurveDist !== null && nextCurveDist > 0) {
+      // 计算到下一个弯道的距离（环形轨道）
+      let minCurveDist: number | null = null
+      for (const [start, end] of this.curveRanges) {
+        // 只考虑前方的弯道
+        let dist = ((start - this.position + this.trackLength) % this.trackLength)
+        if (dist > 0.01) {
+          if (minCurveDist === null || dist < minCurveDist) {
+            minCurveDist = dist
+          }
+        }
+      }
+      if (minCurveDist !== null) {
         const curveBrakingDistance = (this.speed ** 2 - this.maxCurveSpeed ** 2) / (2 * 0.5)
-        if (nextCurveDist < curveBrakingDistance) {
+        if (minCurveDist < curveBrakingDistance) {
           // 需要提前减速到弯道限速
           maxSpeed = Math.min(maxSpeed, this.maxCurveSpeed)
-          console.log('提前减速' + this.position)
         }
       }
     }
@@ -162,8 +177,12 @@ export class CarController {
     let target = Math.min(this.targetSpeed, maxSpeed)
     if (this.speed < target) {
       this.speed = Math.min(this.speed + 0.5 * dt, target)
+      this.acceleration = 0.5
     } else if (this.speed > target) {
       this.speed = Math.max(this.speed - 0.5 * dt, target)
+      this.acceleration = -0.5
+    } else {
+      this.acceleration = 0
     }
 
     this.position += this.speed * dt // 更新位置
@@ -262,7 +281,19 @@ export class CarController {
   public getStatus(): string {
     return this.status
   }
-
+  // 获取所有信息
+  public getAllInfo() {
+    return {
+      id: this.id,
+      position: this.position,
+      speed: this.speed,
+      acceleration: this.acceleration,
+      status: this.status,
+      task: this.task,
+      portFrom: this.portFrom,
+      portTo: this.portTo,
+    }
+  }
   // 设置目标速度
   public setTargetSpeed(v: number) {
     this.targetSpeed = Math.min(v, this.maxStraightSpeed)

@@ -11,14 +11,16 @@
           <thead class="sticky top-0 bg-[#23284a]">
             <tr>
               <th class="px-4 py-1 border-b border-[#2a2f4d] text-[12px] w-3">任务类型</th>
-              <th class="px-4 py-1 border-b border-[#2a2f4d] text-[12px]">状态</th>
-              <th class="px-4 py-1 border-b border-[#2a2f4d] text-[12px]">时间</th>
+              <th class="px-4 py-1 border-b border-[#2a2f4d] text-[12px]">取货点</th>
+              <th class="px-4 py-1 border-b border-[#2a2f4d] text-[12px]">目标点</th>
+              <th class="px-4 py-1 border-b border-[#2a2f4d] text-[12px]">进度</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(row, idx) in tableData" :key="idx" class="hover:bg-[#23284a]">
               <td class="px-4 py-2 border-b border-[#2a2f4d]">{{ row.name }}</td>
               <td class="px-4 py-2 border-b border-[#2a2f4d]">{{ row.date }}</td>
+              <td class="px-4 py-2 border-b border-[#2a2f4d]">{{ row.address }}</td>
               <td class="px-4 py-2 border-b border-[#2a2f4d]">{{ row.address }}</td>
             </tr>
           </tbody>
@@ -30,27 +32,42 @@
 
 <script setup lang="ts">
 import { DataLine } from '@element-plus/icons-vue'
+import store from '@/store';
+import { computed, onMounted } from 'vue'
+
+
+
 
 const tableData = [
   {
     date: '2016-05-03',
     name: 'Tom',
-    address: 'No. 189, Grove St, Los Angeles',
+    address: 'Angeles',
   },
   {
     date: '2016-05-02',
     name: 'Tom',
-    address: 'No. 189, Grove St, Los Angeles',
+    address: 'No. 189, Greles',
   },
   {
     date: '2016-05-04',
     name: 'Tom',
-    address: 'No. 189, Grove St, Los Angeles',
+    address: 'No. 18ngeles',
   },
   {
     date: '2016-05-01',
     name: 'Tom',
-    address: 'No. 189, Grove St, Los Angeles',
+    address: 'No. 189les',
   },
 ]
+
+onMounted(() => {
+  const scheduler = computed(() => store.getters.scheduler)
+
+const testlist = computed(() => {
+  return scheduler.value.getTaskDetails()
+})
+console.log(scheduler.value);
+
+})
 </script>
