@@ -35,6 +35,7 @@
       <div class="h-full flex-1" id="acceleration"></div>
       <div class="h-full flex-1" id="speed"></div>
     </div>
+    <div class="text-white relative bottom-6"><p>当前状态：{{ carStatus }}</p></div>
     <dv-decoration5 :dur="2" style="width: 90%; height: 40px" class="mb-3 absolute bottom-0" />
   </div>
 </template>
@@ -47,6 +48,8 @@ import store from '@/store'
 
 const controllers = computed(() => store.getters.controllers)
 const carIndex = ref(0)
+
+const carStatus = ref('')
 
 const options = computed(() => {
   return controllers.value.map((item: any, index: number) => {
@@ -183,7 +186,7 @@ onMounted(() => {
     const car = controllers.value[carIndex.value]
 
     const carinfo = car.getAllInfo()
-
+    carStatus.value = carinfo
     speed.setOption({
       series: [
         {

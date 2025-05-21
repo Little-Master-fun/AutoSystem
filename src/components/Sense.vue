@@ -46,7 +46,7 @@ console.log(tasklist.value);
 const controller = computed(() => {
   const arr: CarController[] = []
   for (let i = 0; i < carCount.value; i++) {
-    arr.push(new CarController(i + 1, deviceMap, 73.47 + i * 2.2))
+    arr.push(new CarController(i + 1, deviceMap, 73.47 - i * 2.2))
   }
   return arr
 })
@@ -111,7 +111,8 @@ onLoop(() => {
 
     // 更新状态（如果你要显示）
     status.value[i].status = car.getDisplayProps().status
-  }
+    
+  }  
 })
 
 // 计算轨道长度

@@ -64,6 +64,7 @@ export class CarController {
       this.stopPoints = [(this.position + this.trackLength) % this.trackLength]
       this.currentStopIndex = 0
       this.updateMotion(deltaTime)
+      
     }
 
     if (this.status === 'moving' || this.status === 'cruising') {
@@ -76,6 +77,8 @@ export class CarController {
           this.setTarget(this.stopPoints[0])
           this.targetSpeed = this.maxStraightSpeed
           // 保持cruising状态
+          console.log(`[Car ${this.id}] 巡航到达终点，继续巡航，当前位置：${this.position.toFixed(2)} m`);
+          
           return
         }
 
@@ -88,23 +91,28 @@ export class CarController {
           this.targetSpeed = 0
           this.stopPoints = []
           this.currentStopIndex = 0
+          console.log(`[Car ${this.id}] 巡航到达终点，状态设为idle，当前位置：${this.position.toFixed(2)} m`);
+          
           return
+
         }
 
         if (!device) return
 
         // STEP 1：装货点检查设备状态和物料ID
         if (this.currentStopIndex === 0) {
+          console.log(`[Car ${this.id}] 到达 ${device.id}，当前物料ID: ${device.currentMaterialId}`);
+          
           if (device.status === 'full' && device.currentMaterialId === this.task?.materialId) {
             console.log(`[Car ${this.id}] 到达 ${device.id} 开始装货`)
             this.status = 'loading'
             // 取走物料
+            device.onMaterialTaken()
             setTimeout(() => {
               this.status = 'loaded'
               this.currentStopIndex++
               this.setTarget(this.stopPoints[1])
               this.status = 'moving'
-              device.onMaterialTaken()
             }, 7500)
           } else {
             // 等设备准备好再装货
@@ -208,7 +216,7 @@ export class CarController {
   }
 
   // 设置目标点
-  private setTarget(pos: number) {
+  public setTarget(pos: number) {
     this.targetSpeed = this.maxStraightSpeed // 直道最大速度
     this.stopPoints[this.currentStopIndex] = pos
   }

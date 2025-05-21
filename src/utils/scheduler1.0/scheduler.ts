@@ -51,7 +51,8 @@ export class Scheduler {
   // 将任务队列中的 fromDevice 和物料编号分配到对应设备
   public assignTasksToDevices() {
     for (const task of this.taskQueue) {
-      const device = this.deviceMap.get(task.fromDevice)
+      const device = this.deviceMap.get(Number(task.fromDevice))
+      
       if (device) {
         device.addTask(task.materialId)
       } else {
@@ -69,6 +70,8 @@ export class Scheduler {
         // portFrom.addTask(task.materialId)
         const fromPos = this.deviceToPosition(task.fromDevice)
         const toPos = this.deviceToPosition(task.toDevice)
+        console.log(`分配任务：小车 ${car.id} 执行任务 ${task.taskId}，从 ${task.fromDevice} 到 ${task.toDevice}`);
+        
         car.assignTask(task, fromPos, toPos)
       }
     }
@@ -85,7 +88,7 @@ export class Scheduler {
       const front = sorted[(i + 1) % n]
       const distance = car.getDistanceTo(front, this.trackLength)
       const brakingDist = car.getSpeed() ** 2 / (2 * 0.5) // 假设减速度为0.5
-      const safeDist = this.carLength + 1 // 小车长度+安全距离
+      const safeDist = this.carLength + 0.2 // 小车长度+安全距离
 
       // 优化：只有在 moving/cruising 状态下才主动避障，等待/装卸时不主动减速
       if (
@@ -95,15 +98,31 @@ export class Scheduler {
         // 如果前车是等待/装卸/加载等非移动状态，后车提前减速
         if (front.status !== 'moving' && front.status !== 'cruising') {
           car.setTargetSpeed(0)
+          console.log(`小车 ${car.id} 减速到 0，前车 ${front.id} 状态：${front.status}`);
+          
         } else {
           // 前车也在移动，后车减速到安全速度
           car.setTargetSpeed(Math.min(car.getSpeed(), front.getSpeed()))
+          console.log(`小车 ${car.id} 减速到 ${car.speed}，前车 ${front.id} 状态：${front.status}`);
+          
         }
       } else {
         // 距离安全，恢复正常速度
         car.setTargetSpeed(car['maxStraightSpeed'] || 2.67)
+        
       }
     }
+  }
+
+  /**
+   * 检查所有任务是否已完成，如果已完成则停止所有小车
+   */
+  public checkAndStopIfAllTasksDone() {
+    const allCarsIdle = this.cars.every(car => car.getStatus() === 'idle' && !car.task);
+    const noPendingTasks = this.taskQueue.length === 0;
+    // if (allCarsIdle && noPendingTasks) {
+    //   this.cars.forEach(car => car.stop && car.stop());
+    // }
   }
 
   // 计算小车到达目标位置的时间（考虑加速时间）

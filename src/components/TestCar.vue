@@ -84,8 +84,8 @@ const tastList = reactive<TaskItem[]>([
     taskId: 1,
     materialId: 1,
     type: '出库',
-    fromDevice: 1,
-    toDevice: 2,
+    fromDevice: 16,
+    toDevice: 1,
     createTime: Date.now(),
   },
 ])

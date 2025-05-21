@@ -67,7 +67,6 @@ onMounted(() => {
 const testlist = computed(() => {
   return scheduler.value.getTaskDetails()
 })
-console.log(scheduler.value);
 
 })
 </script>
