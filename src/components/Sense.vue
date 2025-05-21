@@ -37,8 +37,11 @@ import Station from './tres/Station.vue'
 const trackPoints = inittrackinner()
 const carCount = computed(() => store.state.carCount)
 
-
+// 获取任务和设备信息
+const tasklist = computed(() => store.getters.testList)
 const deviceMap = getDeviceMap()
+console.log(tasklist.value);
+
 
 const controller = computed(() => {
   const arr: CarController[] = []
@@ -121,13 +124,16 @@ for (let i = 1; i < trackPoints.length; i++) {
 
 const scheduler = new Scheduler(controllers, deviceMap, totalLength)
 // 这里可以添加任务
-scheduler.addTask({
-  taskId: 1,
-  materialId: 101,
-  type: '出库',
-  fromDevice: 16,
-  toDevice: 1,
-  createTime: Date.now(),
+
+tasklist.value.forEach((task: any) => {
+  scheduler.addTask({
+    taskId: task.taskId,
+    materialId: task.materialId,
+    type: task.type,
+    fromDevice: task.fromDevice,
+    toDevice: task.toDevice,
+    createTime: task.createTime,
+  })
 })
 
 scheduler.assignTasksToDevices()

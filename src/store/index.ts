@@ -14,10 +14,19 @@ export interface TaskItem {
 
 export default createStore({
   state: {
-    testList: [] as TaskItem[],
+    testList: [
+      {
+        taskId: 1,
+        materialId: 101,
+        type: '出库',
+        fromDevice: 16,
+        toDevice: 1,
+        createTime: Date.now(),
+      }
+    ] as TaskItem[],
     carCount: 1,
     controllers: [] as CarController[],
-    scheduler: null as Scheduler | null
+    scheduler: null as Scheduler | null,
   },
   mutations: {
     setTestList(state: { testList: TaskItem[] }, value: TaskItem[]) {
@@ -26,19 +35,35 @@ export default createStore({
     setCarCount(state: { carCount: number }, value: number) {
       state.carCount = value
     },
-    setControllers(state: { testList: TaskItem[]; carData: any[]; controllers: CarController[] }, controllers: CarController[]) {
+    setControllers(
+      state: { testList: TaskItem[]; carData: any[]; controllers: CarController[] },
+      controllers: CarController[],
+    ) {
       state.controllers = controllers
     },
-    setScheduler(state: { testList: TaskItem[]; carData: any[]; controllers: CarController[]; scheduler: Scheduler | null }, scheduler: Scheduler) {
+    setScheduler(
+      state: {
+        testList: TaskItem[]
+        carData: any[]
+        controllers: CarController[]
+        scheduler: Scheduler | null
+      },
+      scheduler: Scheduler,
+    ) {
       state.scheduler = scheduler
-    }
-
+    },
   },
   getters: {
-    controllers: (state: { testList: TaskItem[]; carData: any[]; controllers: CarController[] }) => state.controllers,
-    scheduler: (state: { testList: TaskItem[]; carData: any[]; controllers: CarController[]; scheduler: Scheduler | null }) => state.scheduler,
+    controllers: (state: { testList: TaskItem[]; carData: any[]; controllers: CarController[] }) =>
+      state.controllers,
+    scheduler: (state: {
+      testList: TaskItem[]
+      carData: any[]
+      controllers: CarController[]
+      scheduler: Scheduler | null
+    }) => state.scheduler,
     carCount: (state: { carCount: number }) => state.carCount,
     carData: (state: { testList: TaskItem[]; carData: any[] }) => state.carData,
-    testList: (state: { testList: TaskItem[] }) => state.testList
-  }
+    testList: (state: { testList: TaskItem[] }) => state.testList,
+  },
 })
