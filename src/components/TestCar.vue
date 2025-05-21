@@ -31,13 +31,13 @@
                     </el-radio-group>
                   </el-form-item>
                   <el-form-item label="物料ID">
-                    <el-input v-model="item.materialId" placeholder="Material ID" />
+                    <el-input v-model="item.materialId" placeholder="Material ID"  />
                   </el-form-item>
                   <el-form-item label="起始设备">
-                    <el-input v-model="item.fromDevice" placeholder="From Device" />
+                    <el-input v-model="item.fromDevice" placeholder="From Device" type="number" />
                   </el-form-item>
                   <el-form-item label="目标设备">
-                    <el-input v-model="item.toDevice" placeholder="To Device" />
+                    <el-input v-model="item.toDevice" placeholder="To Device" type="number" />
                   </el-form-item>
                 </div>
               </el-form>
@@ -101,6 +101,11 @@ const addTask = () => {
   })
 }
 const beginSystem = () => {
+  // 将fromDevice和toDevice转为Number类型
+  tastList.forEach(item => {
+    item.fromDevice = Number(item.fromDevice)
+    item.toDevice = Number(item.toDevice)
+  })
   setTast(tastList)
   setCarCount(carCount.value)
   

@@ -11,7 +11,7 @@ export class CarController {
   public status: 'idle' | 'moving' | 'loading' | 'loaded' | 'unloading' | 'waiting' | 'cruising' =
     'idle' // 当前状态
   public task: CarTask | null = null // 当前任务
-
+  public isCollision: boolean = false // 是否暂停
   public portFrom: PortDevice | null = null
   public portTo: PortDevice | null = null
   public deviceMap: Map<number, PortDevice> // 设备映射表
@@ -70,6 +70,8 @@ export class CarController {
     if (this.status === 'moving' || this.status === 'cruising') {
       // 到达目标点且速度为0
       if (this.reachedTarget() && this.speed === 0) {
+        console.log(`[Car ${this.id}] 到达目标点，当前位置：${this.position.toFixed(2)} m`);
+        
         if (this.status === 'cruising') {
           // 到达一圈终点后继续巡航
           this.stopPoints = [(this.position + this.trackLength) % this.trackLength]
@@ -288,5 +290,8 @@ export class CarController {
   // 计算与另一辆小车的距离（环形轨道）
   public getDistanceTo(car: CarController, trackLength: number): number {
     return (car.position - this.position + trackLength) % trackLength
+  }
+  public getMaxStraightSpeed() {
+    return this.maxStraightSpeed
   }
 }

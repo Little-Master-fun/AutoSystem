@@ -5,9 +5,9 @@
     <!-- 轨道线 -->
     <Track />
     <!-- 小车 -->
-    <TresMesh ref="carRefs" v-for="(car, index) in controllers" :key="car.id">
+    <TresMesh v-for="(car, index) in controllers" :key="car.id" :ref="el => setCarRefs(el, index)">
       <TresBoxGeometry :args="[1.2, 0.2, 1.2]" />
-      <TresMeshStandardMaterial :color="color(status[index]?.status)" />
+      <TresMeshStandardMaterial :color="color(status[index]?.status ?? 'idle')" />
     </TresMesh>
     <!-- 站台 -->
     <TresGroup v-for="(d, idx) in stationPos" :key="d.id ?? idx" :position="d.position">
@@ -46,7 +46,7 @@ console.log(tasklist.value);
 const controller = computed(() => {
   const arr: CarController[] = []
   for (let i = 0; i < carCount.value; i++) {
-    arr.push(new CarController(i + 1, deviceMap, 73.47 - i * 2.2))
+    arr.push(new CarController(i + 1, deviceMap, 73.47 - i * 2.2))//2.2
   }
   return arr
 })
@@ -97,8 +97,13 @@ for (let i = 0; i < controllers.length; i++) {
     status: 'idle',
   })
 }
-// // 存储子组件引用，必须是数组
+// 存储子组件引用，必须是数组
 const carRefs = shallowRef<any[]>([])
+function setCarRefs(el: any, idx: number) {
+  if (el) {
+    carRefs.value[idx] = el
+  }
+}
 const { onLoop } = useRenderLoop()
 onLoop(() => {
   for (let i = 0; i < controllers.length; i++) {

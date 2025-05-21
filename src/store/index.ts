@@ -19,7 +19,7 @@ export default createStore({
         taskId: 1,
         materialId: 101,
         type: '出库',
-        fromDevice: 16,
+        fromDevice: 17,
         toDevice: 1,
         createTime: Date.now(),
       }
