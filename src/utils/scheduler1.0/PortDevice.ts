@@ -9,16 +9,54 @@ export class PortDevice {
   public timer: number = 0
   public position: number
 
+  // 新增：任务队列和当前物料ID
+  private taskQueue: number[] = []
+  public currentMaterialId: number | null = null
+
   constructor(id: number, type: PortType, position: number) {
     this.id = id
     this.type = type
     this.position = position
   }
 
+  // 新增：添加任务（物料ID）
+  public addTask(materialId: number) {
+    this.taskQueue.push(materialId)
+    console.log(`[Device ${this.id}] 添加任务，物料ID: ${materialId}`)
+
+    // 如果当前没有物料且设备空闲，自动开始下一个任务
+    if (!this.currentMaterialId && this.isAvailable()) {
+      this.startNextTask()
+    }
+  }
+
+  // 新增：开始下一个任务
+  private startNextTask() {
+    if (this.taskQueue.length === 0) return
+
+    // 只在设备空闲或empty时才取下一个任务
+    if (!this.isAvailable()) return
+    console.log(this.taskQueue);
+    
+    this.currentMaterialId = this.taskQueue.shift() || null
+    console.log(this.taskQueue);
+    
+    // 根据类型自动开始装/卸货，并使用不同的时间
+    if (this.type === 'inlet') {
+      this.startOperation('loading', 3)
+    } else if (this.type === 'out-interface') {
+      this.startOperation('loading', 50)
+    } else if (this.type === 'in-interface' && this.status === 'idle') {
+      this.startOperation('unloading', 25)
+    } else if (this.type === 'outlet' && this.status === 'idle') {
+      this.startOperation('unloading', 30)
+      console.log('人工卸货')
+    }
+  }
+  // 新增：更新设备状态
   public update(deltaTime: number) {
     if (this.timer > 0) {
       this.timer -= deltaTime
-      
       if (this.timer <= 0) {
         this.timer = 0
         this.finishOperation()
@@ -27,21 +65,47 @@ export class PortDevice {
   }
 
   private finishOperation() {
-    if (this.type === 'out-interface' && this.status === 'loading') {
+    // 完成装/卸货后，自动处理物料
+    if ((this.type === 'out-interface' || this.type === 'inlet') && this.status === 'loading') {
       this.hasCargo = true
       this.status = 'full'
+      console.log(`[Device ${this.id}] 装货完成，物料ID: ${this.currentMaterialId}`)
     }
-    if (this.type === 'outlet' && this.status === 'unloading') {
+    if ((this.type === 'outlet' || this.type === 'in-interface') && this.status === 'unloading') {
       this.hasCargo = false
       this.status = 'idle'
+      this.currentMaterialId = null // 物料被取走
+      this.startNextTask() // 自动开始下一个任务
     }
-    if (this.type === 'inlet' && this.status === 'loading') {
+    // 如果是装货完成，等待小车取走后再自动下一个
+    if ((this.type === 'out-interface' || this.type === 'inlet') && this.status === 'full') {
+      // 等待小车取走，取走后需调用 onMaterialTaken
+    }
+  }
+
+  // 新增：小车取走物料时调用
+  public onMaterialTaken() {
+    if (this.hasCargo && (this.type === 'out-interface' || this.type === 'inlet')) {
+      this.hasCargo = false
+      this.status = 'idle'
+      this.currentMaterialId = null
+      this.startNextTask()
+    }
+  }
+
+  // 小车放上物料时调用
+  public onMaterialPlaced(materialId: number) {
+    if (!this.hasCargo && (this.type === 'outlet' || this.type === 'in-interface')) {
       this.hasCargo = true
       this.status = 'full'
-    }
-    if (this.type === 'in-interface' && this.status === 'unloading') {
-      this.hasCargo = false
-      this.status = 'idle'
+      this.currentMaterialId = materialId
+      console.log(`[Device ${this.id}] 卸货完成，物料ID: ${materialId}`)
+      if (this.type === 'in-interface' && this.status === 'full') {
+        this.startOperation('unloading', 25) // 入口接口卸货25秒（取走）
+      } else if (this.type === 'outlet' && this.status === 'full') {
+        this.startOperation('unloading', 30) // 出库口卸货30秒
+        console.log('人工卸货')
+      }
     }
   }
 
@@ -49,6 +113,7 @@ export class PortDevice {
     if (this.timer > 0) return // 忽略正在进行中的
     this.status = status
     this.timer = duration
+    console.log(`[Device ${this.id}] 开始 ${status}，预计 ${duration} 秒`)
   }
 
   public isBusy(): boolean {
@@ -60,7 +125,7 @@ export class PortDevice {
   }
 }
 
-// ✅ 全部设备的位置信息（用于初始化）
+// 全部设备的位置信息（用于初始化）
 const devicePositions: Record<number, number> = {
   1: 13.54,
   2: 15.94,
@@ -82,7 +147,7 @@ const devicePositions: Record<number, number> = {
   18: 91.47,
 }
 
-// ✅ 类型映射表（可灵活配置）
+// 类型映射表（可灵活配置）
 const portTypes: Record<number, PortType> = {
   1: 'in-interface',
   2: 'out-interface',
@@ -119,4 +184,16 @@ export function getDeviceMap(): Map<number, PortDevice> {
   const map = new Map<number, PortDevice>()
   getAllDevices().forEach((dev) => map.set(dev.id, dev))
   return map
+}
+
+/**
+ * 通过设备id查找设备状态
+ * @param id 设备ID
+ * @param deviceMap 可选，设备Map，默认自动生成
+ * @returns 设备状态（PortStatus）或 null
+ */
+export function getDeviceStatusById(id: number): PortStatus | null {
+  const map = getDeviceMap()
+  const device = map.get(id)
+  return device ? device.status : null
 }

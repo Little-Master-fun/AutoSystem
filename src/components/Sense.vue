@@ -7,11 +7,11 @@
     <!-- 小车 -->
     <TresMesh ref="carRefs" v-for="(car, index) in controllers" :key="car.id">
       <TresBoxGeometry :args="[1.2, 0.2, 1.2]" />
-      <TresMeshStandardMaterial color="#2196f3" />
+      <TresMeshStandardMaterial :color="color(status[index]?.status)" />
     </TresMesh>
     <!-- 站台 -->
     <TresGroup v-for="(d, idx) in stationPos" :key="d.id ?? idx" :position="d.position">
-      <Station></Station>
+      <Station :id="d.id" :device="deviceMap.get(d.id)"></Station>
     </TresGroup>
     <TresDirectionalLight :position="[0, 2, 4]" :intensity="1.2" cast-shadow />
     <TresGridHelper />
@@ -130,6 +130,8 @@ scheduler.addTask({
   createTime: Date.now(),
 })
 
+scheduler.assignTasksToDevices()
+
 store.commit('setScheduler', scheduler)
 
 let lastTime = performance.now()
@@ -147,14 +149,17 @@ onMounted(() => {
 })
 
 // 小车状态函数
-// const color = computed(() => {
-//   switch (props.status.status) {
-//     case 'idle': return '#2196f3'
-//     case 'moving': return '#4caf50'
-//     case 'loading': return '#ff9800'
-//     case 'loaded': return '#673ab7'
-//     case 'unloading': return '#f44336'
-//     default: return '#9e9e9e'
-//   }
-// })
+function color(status: string) {
+  switch (status) {
+    case 'idle': return '#2196f3'
+    case 'moving': return '#4caf50'
+    case 'loading': return '#ff9800'
+    case 'loaded': return '#673ab7'
+    case 'unloading': return '#f44336'
+    case 'waiting': return '#ffeb3b'
+    case 'cruising': return '#3f51b5'
+    default: return '#9e9e9e'
+  }
+}
+
 </script>

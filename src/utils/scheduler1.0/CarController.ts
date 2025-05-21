@@ -61,18 +61,17 @@ export class CarController {
       this.status = 'cruising'
       this.targetSpeed = this.maxStraightSpeed
       // 巡航目标点为当前位置顺时针一圈
-      this.stopPoints = [((this.position + this.trackLength) % this.trackLength)]
+      this.stopPoints = [(this.position + this.trackLength) % this.trackLength]
       this.currentStopIndex = 0
       this.updateMotion(deltaTime)
     }
 
     if (this.status === 'moving' || this.status === 'cruising') {
-
       // 到达目标点且速度为0
       if (this.reachedTarget() && this.speed === 0) {
         if (this.status === 'cruising') {
           // 到达一圈终点后继续巡航
-          this.stopPoints = [((this.position + this.trackLength) % this.trackLength)]
+          this.stopPoints = [(this.position + this.trackLength) % this.trackLength]
           this.currentStopIndex = 0
           this.setTarget(this.stopPoints[0])
           this.targetSpeed = this.maxStraightSpeed
@@ -94,18 +93,18 @@ export class CarController {
 
         if (!device) return
 
-        // STEP 1：装货点检查设备状态
+        // STEP 1：装货点检查设备状态和物料ID
         if (this.currentStopIndex === 0) {
-          if (device.status === 'full') {
+          if (device.status === 'full' && device.currentMaterialId === this.task?.materialId) {
             console.log(`[Car ${this.id}] 到达 ${device.id} 开始装货`)
             this.status = 'loading'
-            device.hasCargo = false
-            device.status = 'idle'
-            setTimeout(() => {              
+            // 取走物料
+            setTimeout(() => {
               this.status = 'loaded'
               this.currentStopIndex++
               this.setTarget(this.stopPoints[1])
               this.status = 'moving'
+              device.onMaterialTaken()
             }, 7500)
           } else {
             // 等设备准备好再装货
@@ -119,13 +118,16 @@ export class CarController {
           if (device.status === 'idle') {
             console.log(`[Car ${this.id}] 到达 ${device.id} 开始卸货`)
             this.status = 'unloading'
-            device.startOperation('unloading', this.task?.type === '出库' ? 30 : 25)
-
+            // 卸货时将物料ID放到目标设备
+            device.currentMaterialId = this.task?.materialId || null
             setTimeout(() => {
+              const materialId = this.task?.materialId || 0
               this.status = 'idle'
               this.task = null
               this.stopPoints = []
               this.currentStopIndex = 0
+              // 卸货后自动触发目标设备的下一个任务（如有）
+              device.onMaterialPlaced(materialId)
             }, 7500)
           } else {
             this.status = 'waiting'
@@ -133,7 +135,6 @@ export class CarController {
         }
       }
       this.updateMotion(deltaTime)
-
     }
   }
 
@@ -146,7 +147,8 @@ export class CarController {
     const targetPos = this.stopPoints[this.currentStopIndex]
     // 环形距离
     const distToStop = Math.abs(
-      ((targetPos - this.position + this.trackLength / 2) % this.trackLength) - this.trackLength / 2,
+      ((targetPos - this.position + this.trackLength / 2) % this.trackLength) -
+        this.trackLength / 2,
     )
     const brakingDistance = this.speed ** 2 / (2 * 0.5) // 假设最大减速度为0.5 m/s²
     if (distToStop < brakingDistance) this.targetSpeed = 0
@@ -157,7 +159,7 @@ export class CarController {
       let minCurveDist: number | null = null
       for (const [start, end] of this.curveRanges) {
         // 只考虑前方的弯道
-        let dist = ((start - this.position + this.trackLength) % this.trackLength)
+        let dist = (start - this.position + this.trackLength) % this.trackLength
         if (dist > 0.01) {
           if (minCurveDist === null || dist < minCurveDist) {
             minCurveDist = dist
@@ -220,28 +222,6 @@ export class CarController {
     this.status = 'moving'
     this.portFrom = this.deviceMap.get(task.fromDevice)!
     this.portTo = this.deviceMap.get(task.toDevice)!
-    const portFrom = this.deviceMap.get(task.fromDevice)!
-    const portTo = this.deviceMap.get(task.toDevice)!
-    // 分配任务时，若起点是出库接口设备且空闲，触发堆垛机上货
-    if (portFrom.type === 'out-interface' && !portFrom.hasCargo && portFrom.status === 'idle') {
-      portFrom.startOperation('loading', 50) // 堆垛机上货50秒
-      console.log('堆垛机上货');
-      
-    }
-    // 分配任务时，若终点是入库接口设备且空闲，触发等待堆垛机取货
-    if (portTo.type === 'in-interface' && !portTo.hasCargo && portTo.status === 'idle') {
-      // 这里不需要立即触发，等小车送到后再触发
-    }
-    // 分配任务时，若起点是入库口且空闲，触发人工上货
-    if (portFrom.type === 'inlet' && !portFrom.hasCargo && portFrom.status === 'idle') {
-      portFrom.startOperation('loading', 30) // 人工上货30秒
-      console.log('人工上货');
-    }
-    // 分配任务时，若终点是出库口且有货，触发人工卸货
-    if (portTo.type === 'outlet' && portTo.hasCargo && portTo.status === 'idle') {
-      portTo.startOperation('unloading', 30) // 人工卸货30秒
-      console.log('人工卸货');
-    }
   }
 
   // 判断等待是否结束
@@ -253,10 +233,8 @@ export class CarController {
     if (!device) return
 
     if (this.currentStopIndex === 0 && device.status === 'full') {
-      // same as loading block...
     }
     if (this.currentStopIndex === 1 && device.status === 'idle') {
-      // same as unloading block...
     }
   }
   // 获取显示属性
