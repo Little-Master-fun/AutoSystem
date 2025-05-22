@@ -172,6 +172,7 @@ export class CarController {
           this.task = null
           this.stopPoints = []
           this.currentStopIndex = 0
+          // 完成任务
           device.onMaterialPlaced(materialId)
         }, 7500)
         }
