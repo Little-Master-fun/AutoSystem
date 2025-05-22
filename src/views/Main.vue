@@ -33,10 +33,10 @@
           <chart11></chart11>
         </dv-border-box12>
         <dv-border-box12 class="flex-1/3 h-full">
-            <chart12></chart12>
+          <chart12></chart12>
         </dv-border-box12>
         <dv-border-box13 class="flex-1/8 h-full">
-            <chart13></chart13>
+          <chart13></chart13>
         </dv-border-box13>
       </div>
       <!-- 2-2 -->
@@ -53,11 +53,11 @@
 </template>
 
 <script setup lang="ts">
-import chart11 from '@/components/charts/chart1-1.vue';
-import chart21 from '@/components/charts/chart2-1.vue';
-import chart22 from '@/components/charts/chart2-2.vue';
-import chart12 from '@/components/charts/chart1-2.vue';
-import chart13 from '@/components/charts/chart1-3.vue';
+import chart11 from '@/components/charts/chart1-1.vue'
+import chart21 from '@/components/charts/chart2-1.vue'
+import chart22 from '@/components/charts/chart2-2.vue'
+import chart12 from '@/components/charts/chart1-2.vue'
+import chart13 from '@/components/charts/chart1-3.vue'
 
 </script>
 

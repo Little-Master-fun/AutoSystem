@@ -7,7 +7,8 @@
     </div>
     <div class="h-[80%] w-full flex items-center justify-center">
       <el-scrollbar height="100%" class="w-[95%]">
-        <table class="min-w-full bg-[#181c2f] text-white border-collapse">
+        
+{{ testlist }}        <table class="min-w-full bg-[#181c2f] text-white border-collapse">
           <thead class="sticky top-0 bg-[#23284a]">
             <tr>
               <th class="px-4 py-1 border-b border-[#2a2f4d] text-[12px] w-3">任务类型</th>
@@ -32,11 +33,8 @@
 
 <script setup lang="ts">
 import { DataLine } from '@element-plus/icons-vue'
-import store from '@/store';
-import { computed, onMounted } from 'vue'
-
-
-
+import store from '@/store'
+import { computed, onMounted, ref } from 'vue'
 
 const tableData = [
   {
@@ -61,12 +59,17 @@ const tableData = [
   },
 ]
 
+const testlist = ref([])
 onMounted(() => {
   const scheduler = computed(() => store.getters.scheduler)
 
-const testlist = computed(() => {
-  return scheduler.value.getTaskDetails()
-})
+  const updateTestList = () => {
+    const testlists = scheduler.value.getTaskDetails()
+    testlist.value = testlists
+  }
 
+  updateTestList()
+  setInterval(updateTestList, 1000)
+  
 })
 </script>

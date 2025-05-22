@@ -1,6 +1,29 @@
-import { CarController } from './CarController.ts'
+import { CarController } from './CarController'
 import type { CarTask } from '@/types'
-import { PortDevice } from './PortDevice.ts'
+import { PortDevice } from './PortDevice'
+
+type Assignment = {
+  car: CarController
+  port: PortDevice
+  from: number // car 的当前位置
+  arriveTime: number // 抵达 port 所需时间
+  finishTime: number // 抵达后 + 取货时间
+  path: [number, number] // 轨道路径段 [from → port]
+}
+
+export type TaskStatus = 'waiting' | 'in-progress' | 'done'
+
+export interface TaskDetail {
+  taskId: string
+  fromDevice: number
+  toDevice: number
+  createTime: number
+  startTime: number | null
+  endTime: number | null
+  assignedCarId: number | null
+  status: TaskStatus
+  progress: number
+}
 
 export class Scheduler {
   private cars: CarController[]
@@ -16,6 +39,8 @@ export class Scheduler {
   constructor(cars: CarController[], deviceMap: Map<number, PortDevice>, trackLength: number) {
     this.cars = cars
     this.trackLength = trackLength
+    console.log(`轨道长度：${this.trackLength}`);
+    
     this.deviceMap = deviceMap
   }
 
@@ -112,103 +137,230 @@ export class Scheduler {
   //   }
   //   // 其余空闲小车自动巡航
   // }
-  private assignTasks() {
+  // private assignTasks() {
+  //   const readyPorts = Array.from(this.deviceMap.values()).filter(
+  //     (port) => (port.type === 'inlet' || port.type === 'out-interface') && port.status === 'full',
+  //   )
+
+  //   const idleCars = this.cars.filter(
+  //     (car) => car.getStatus() === 'idle' || car.getStatus() === 'cruising',
+  //   )
+  //   console.log(`空闲小车数量：${idleCars.length}，准备上货口数量：${readyPorts.length}`)
+
+  //   if (readyPorts.length === 0 || idleCars.length === 0) return
+
+  //   const pickTime = 5 // 小车取货时间
+  //   const pairs: {
+  //     car: CarController
+  //     port: PortDevice
+  //     dist: number
+  //     arriveTime: number
+  //     path: [number, number]
+  //   }[] = []
+
+  //   // 构造所有 car-port 的 pair
+  //   for (const car of idleCars) {
+  //     for (const port of readyPorts) {
+  //       const start = car.getPosition()
+  //       const end = port.position
+  //       const dist = (end - start + this.trackLength) % this.trackLength
+  //       const arriveTime = dist / (car['maxStraightSpeed'] || 2.67)
+  //       pairs.push({ car, port, dist, arriveTime, path: [start, end] })
+  //     }
+  //   }
+
+  //   const assignedCars = new Set<CarController>()
+  //   const assignedPorts = new Set<number>()
+  //   const assignments: typeof pairs = []
+
+  //   while (pairs.length > 0) {
+  //     // 计算每个 pair 的冲突分数
+  //     for (const pair of pairs) {
+  //       let conflictPenalty = 0
+  //       for (const existing of assignments) {
+  //         if (this.detectConflict(pair, existing, pickTime)) {
+  //           conflictPenalty += 1000 // 冲突惩罚，可调整
+  //         }
+  //       }
+  //       ;(pair as any).score = pair.arriveTime + conflictPenalty
+  //     }
+
+  //     // 找得分最小的 pair（尽量避开冲突）
+  //     pairs.sort((a, b) => (a as any).score - (b as any).score)
+  //     const best = pairs.shift()!
+
+  //     // 如果小车或口已分配，则跳过
+  //     if (assignedCars.has(best.car) || assignedPorts.has(best.port.id)) continue
+  //     // 找到任务队列中以该口为 fromDevice 的任务
+  //     const taskIdx = this.taskQueue.findIndex((t) => t.fromDevice === best.port.id)
+
+  //     if (taskIdx !== -1) {
+  //       const task = this.taskQueue.splice(taskIdx, 1)[0]
+  //       const fromPos = this.deviceToPosition(task.fromDevice)
+  //       const toPos = this.deviceToPosition(task.toDevice)
+  //       best.car.assignTask(task, fromPos, toPos)
+  //       assignedCars.add(best.car)
+  //       assignedPorts.add(best.port.id)
+  //       assignments.push(best)
+
+  //       console.log(
+  //         `✅ 分配任务：小车${best.car.id} 执行任务${task.taskId}，从${task.fromDevice}到${task.toDevice}`,
+  //       )
+  //     }
+
+  //     // 移除与已分配小车或口相关的 pair
+  //     for (let i = pairs.length - 1; i >= 0; i--) {
+  //       if (pairs[i].car === best.car || pairs[i].port.id === best.port.id) {
+  //         pairs.splice(i, 1)
+  //       }
+  //     }
+  //   }
+  // }
+
+  // // 检查小车之间是否存在冲突
+  // private detectConflict(
+  //   a: { path: [number, number]; arriveTime: number },
+  //   b: { path: [number, number]; arriveTime: number },
+  //   pickTime: number,
+  // ): boolean {
+  //   // 时间段重叠
+  //   const aTimeRange = [a.arriveTime, a.arriveTime + pickTime]
+  //   const bTimeRange = [b.arriveTime, b.arriveTime + pickTime]
+  //   const timeOverlap = !(aTimeRange[1] <= bTimeRange[0] || bTimeRange[1] <= aTimeRange[0])
+
+  //   if (!timeOverlap) return false
+
+  //   // 路径重叠（环形判断）
+  //   const isOverlap = this.isRangeOverlap(a.path[0], a.path[1], b.path[0], b.path[1])
+  //   return isOverlap
+  // }
+
+  // 判断时间区间是否重叠
+
+  public assignTasks() {
     const readyPorts = Array.from(this.deviceMap.values()).filter(
       (port) => (port.type === 'inlet' || port.type === 'out-interface') && port.status === 'full',
     )
-
     const idleCars = this.cars.filter(
-      (car) => car.getStatus() === 'idle' || car.getStatus() === 'cruising',
+      (car) => (car.getStatus() === 'idle' || car.getStatus() === 'cruising') && !car.task,
     )
-    console.log(`空闲小车数量：${idleCars.length}，准备上货口数量：${readyPorts.length}`);
-    
     if (readyPorts.length === 0 || idleCars.length === 0) return
 
-    const pickTime = 5 // 小车取货时间
-    const pairs: {
-      car: CarController
-      port: PortDevice
-      dist: number
-      arriveTime: number
-      path: [number, number]
-    }[] = []
+    const assignmentPlans = this.generateAllAssignmentCombinations(
+      idleCars,
+      readyPorts,
+      this.trackLength,
+    )
+    let bestPlan: Assignment[] | null = null
+    let bestScore = Infinity
 
-    // 构造所有 car-port 的 pair
-    for (const car of idleCars) {
-      for (const port of readyPorts) {
-        const start = car.getPosition()
-        const end = port.position
-        const dist = (end - start + this.trackLength) % this.trackLength
-        const arriveTime = dist / (car['maxStraightSpeed'] || 2.67)
-        pairs.push({ car, port, dist, arriveTime, path: [start, end] })
+    for (const plan of assignmentPlans) {
+      if (this.hasConflict(plan)) continue
+
+      // 评分：可以用总到达时间，也可以加入优先级、路径长度等
+      const totalTime = plan.reduce((sum, a) => sum + a.arriveTime, 0)
+      if (totalTime < bestScore) {
+        bestScore = totalTime
+        bestPlan = plan
       }
     }
 
-    const assignedCars = new Set<CarController>()
-    const assignedPorts = new Set<number>()
-    const assignments: typeof pairs = []
+    if (!bestPlan) return
 
-    while (pairs.length > 0) {
-      // 计算每个 pair 的冲突分数
-      for (const pair of pairs) {
-        let conflictPenalty = 0
-        for (const existing of assignments) {
-          if (this.detectConflict(pair, existing, pickTime)) {
-            conflictPenalty += 1000 // 冲突惩罚，可调整
-          }
-        }
-        ;(pair as any).score = pair.arriveTime + conflictPenalty
-      }
-
-      // 找得分最小的 pair（尽量避开冲突）
-      pairs.sort((a, b) => (a as any).score - (b as any).score)
-      const best = pairs.shift()!
-      
-      // 如果小车或口已分配，则跳过
-      if (assignedCars.has(best.car) || assignedPorts.has(best.port.id)) continue
-      // 找到任务队列中以该口为 fromDevice 的任务
-      const taskIdx = this.taskQueue.findIndex((t) => t.fromDevice === best.port.id)
-      
-
+    // 进行任务分配
+    for (const a of bestPlan) {
+      const taskIdx = this.taskQueue.findIndex((t) => t.fromDevice === a.port.id)
       if (taskIdx !== -1) {
         const task = this.taskQueue.splice(taskIdx, 1)[0]
         const fromPos = this.deviceToPosition(task.fromDevice)
         const toPos = this.deviceToPosition(task.toDevice)
-        best.car.assignTask(task, fromPos, toPos)
-        assignedCars.add(best.car)
-        assignedPorts.add(best.port.id)
-        assignments.push(best)
-
+        a.car.assignTask(task, fromPos, toPos)
         console.log(
-          `✅ 分配任务：小车${best.car.id} 执行任务${task.taskId}，从${task.fromDevice}到${task.toDevice}`,
+          `✅ 分配任务：小车${a.car.id} 执行任务${task.taskId}，从${task.fromDevice}到${task.toDevice}`,
         )
-      }
-
-      // 移除与已分配小车或口相关的 pair
-      for (let i = pairs.length - 1; i >= 0; i--) {
-        if (pairs[i].car === best.car || pairs[i].port.id === best.port.id) {
-          pairs.splice(i, 1)
-        }
       }
     }
   }
 
-  // 检查小车之间是否存在冲突
-  private detectConflict(
-    a: { path: [number, number]; arriveTime: number },
-    b: { path: [number, number]; arriveTime: number },
-    pickTime: number,
-  ): boolean {
-    // 时间段重叠
-    const aTimeRange = [a.arriveTime, a.arriveTime + pickTime]
-    const bTimeRange = [b.arriveTime, b.arriveTime + pickTime]
-    const timeOverlap = !(aTimeRange[1] <= bTimeRange[0] || bTimeRange[1] <= aTimeRange[0])
+  private isPathConflict(a: Assignment, b: Assignment): boolean {
+    // 1. 判断 b.port.position 是否在 a.car 路径 [a.from → a.port] 中
+    const bInAPath = this.isInCircularPath(a.from, a.port.position, b.port.position)
 
-    if (!timeOverlap) return false
+    if (!bInAPath) return false
 
-    // 路径重叠（环形判断）
-    const isOverlap = this.isRangeOverlap(a.path[0], a.path[1], b.path[0], b.path[1])
-    return isOverlap
+    // 2. 判断时间是否重叠（A 的到达 → 完成区间 包含 B 的到达）
+    const bArrival = b.arriveTime
+    const aTimeRange = [a.arriveTime, a.finishTime]
+
+    const timeOverlap = bArrival >= aTimeRange[0] && bArrival <= aTimeRange[1]
+
+    return timeOverlap
+  }
+
+  private isInCircularPath(from: number, to: number, pos: number): boolean {
+    if (from <= to) return pos > from && pos <= to
+    return pos > from || pos <= to
+  }
+
+  // 判断两个区间是否重叠（环形轨道）
+  private hasConflict(assignments: Assignment[]): boolean {
+    for (let i = 0; i < assignments.length; i++) {
+      for (let j = i + 1; j < assignments.length; j++) {
+        const a = assignments[i]
+        const b = assignments[j]
+
+        if (this.isPathConflict(a, b)) return true
+      }
+    }
+    return false
+  }
+
+  // 生成所有组合
+  private generateAllAssignmentCombinations(
+    cars: CarController[],
+    ports: PortDevice[],
+    trackLength: number,
+    pickTime: number = 5,
+  ): Assignment[][] {
+    const results: Assignment[][] = []
+    const usedPorts = new Set<number>()
+
+    function backtrack(index: number, current: Assignment[]) {
+      if (index === cars.length || index === ports.length) {
+        results.push([...current])
+        return
+      }
+
+      for (let i = 0; i < ports.length; i++) {
+        const port = ports[i]
+        if (usedPorts.has(port.id)) continue
+
+        const car = cars[index]
+        const from = car.getPosition()
+        const to = port.position
+        const dist = (to - from + trackLength) % trackLength
+        const speed = car['maxStraightSpeed'] || 2.67
+        const arriveTime = dist / speed
+        const finishTime = arriveTime + pickTime
+
+        current.push({
+          car,
+          port,
+          from,
+          arriveTime,
+          finishTime,
+          path: [from, to],
+        })
+
+        usedPorts.add(port.id)
+        backtrack(index + 1, current)
+        current.pop()
+        usedPorts.delete(port.id)
+      }
+    }
+
+    backtrack(0, [])
+    return results
   }
 
   private isRangeOverlap(aStart: number, aEnd: number, bStart: number, bEnd: number): boolean {
@@ -243,26 +395,27 @@ export class Scheduler {
         if (distance < safeDist + brakingDist) {
           // 前车非移动状态，后车需停车
           if (front.status !== 'moving' && front.status !== 'cruising') {
-        if (car.targetSpeed !== 0 || !car.isCollision) {
-          car.setTargetSpeed(0)
-          car.isCollision = true
-          console.log(`小车${car.id} 减速，前车${front.id} 状态：${front.status}`)
-        }
-          } else {
-        // 前车也在移动，后车减速到不超过前车速度
-        const newSpeed = Math.min(car.getSpeed(), front.getSpeed())
-        if (car.targetSpeed !== newSpeed) {
-          car.setTargetSpeed(newSpeed)
-          car.isCollision = true
-          console.log(`小车${car.id} 跟车减速，前车${front.id} 状态：${front.status}`)
-        }
+            if (car.targetSpeed !== 0 || !car.isCollision) {
+              car.setTargetSpeed(0)
+              car.isCollision = true
+              console.log(`小车${car.id} 减速，前车${front.id} 状态：${front.status} 距离：${distance}`)
+            }
+          } 
+          else {
+            // 前车也在移动，后车减速到不超过前车速度
+            const newSpeed = Math.min(car.getSpeed(), front.getSpeed())
+            if (car.targetSpeed !== newSpeed) {
+              car.setTargetSpeed(newSpeed)
+              car.isCollision = true
+              console.log(`小车${car.id} 跟车减速，前车${front.id} 状态：${front.status} 距离：${distance}`)
+            }
           }
         } else {
           // 距离安全，恢复正常速度（仅在之前因碰撞减速过才恢复）
           if (car.isCollision && car.targetSpeed !== car.getMaxStraightSpeed()) {
-        car.setTargetSpeed(car.getMaxStraightSpeed())
-        car.isCollision = false
-        console.log(`小车${car.id} 恢复正常速度`)
+            car.setTargetSpeed(car.getMaxStraightSpeed())
+            car.isCollision = false
+            console.log(`小车${car.id} 恢复正常速度`)
           }
         }
       }

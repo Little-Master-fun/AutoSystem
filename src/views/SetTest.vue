@@ -23,7 +23,7 @@
       <dv-button
         :bg="false"
         border="Border6"
-        @click="console.log('click')"
+        @click="test2Start"
         class="transition-transform duration-200 hover:scale-105"
         >任务二</dv-button
       >
@@ -43,7 +43,20 @@
 <script setup lang="ts">
 import TestCar from '@/components/TestCar.vue'
 import { ref } from 'vue'
+import { task2 } from '@/utils/senseData'
+import store from '@/store'
+import { useRouter } from 'vue-router'
 
+
+const router = useRouter()
+const setTast = (value: any) => store.commit('setTestList', value)
+const setCarCount = (value: any) => store.commit('setCarCount', value)
+
+const test2Start = () => {
+  setTast(task2)
+  setCarCount(2)
+  router.push('/scene')
+}
 const visCar = ref(false)
 const changeVis = (val: boolean) => {
   visCar.value = val

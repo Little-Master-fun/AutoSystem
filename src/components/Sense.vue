@@ -34,7 +34,7 @@ import Track from './tres/Track.vue'
 import Station from './tres/Station.vue'
 
 //轨道设置函数
-const trackPoints = inittrackinner()
+const trackPoints = inittrackocar()
 const carCount = computed(() => store.state.carCount)
 
 // 获取任务和设备信息
