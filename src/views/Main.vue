@@ -1,7 +1,7 @@
 <template>
   <div class="h-screen w-full pt-2">
     <!-- 头部 -->
-    <div class="flex justify-center w-full">
+    <div class="flex justify-center w-full relative">
       <dv-decoration-10 style="width: 20%; height: 5px" />
       <div class="flex justify-around items-center w-[60%]">
         <dv-decoration8 style="width: 30%; height: 50px" :color="['#568aea', '#000000']" />
@@ -24,6 +24,15 @@
         />
       </div>
       <dv-decoration-10 style="width: 20%; height: 5px; transform: rotate(180deg)" />
+      <div class=" absolute bottom-0 left-5 text-cyan-400" style="font-family: tel">
+        <p>当前时间：{{ time }}</p>
+      </div>
+      <button class="absolute right-5 bottom-0 text-white" @click="speedUp">
+        <p>加速</p>
+      </button>
+      <button class="absolute right-20 bottom-0 text-white" @click="speedDown">
+        <p>减速</p>
+      </button>
     </div>
     <!-- 第二行 -->
     <div class="flex justify-center items-center w-full mt-4 flex-col">
@@ -35,7 +44,7 @@
         <dv-border-box12 class="flex-1/3 h-full">
           <chart12></chart12>
         </dv-border-box12>
-        <dv-border-box13 class="flex-1/8 h-full">
+        <dv-border-box13 class="flex-1/4 h-full">
           <chart13></chart13>
         </dv-border-box13>
       </div>
@@ -58,7 +67,30 @@ import chart21 from '@/components/charts/chart2-1.vue'
 import chart22 from '@/components/charts/chart2-2.vue'
 import chart12 from '@/components/charts/chart1-2.vue'
 import chart13 from '@/components/charts/chart1-3.vue'
+import store from '@/store'
+import { computed, onMounted, ref } from 'vue'
 
+const time = ref<any>(0)
+const scheduler = computed(() => store.getters.scheduler)
+const setspeed  = (value: any) => store.commit('setSpeedValue', value)
+
+const speedUp = () => {
+  setspeed(2)
+    scheduler.value.setAccelerationTime(1)
+
+}
+const speedDown = () => {
+  scheduler.value.setAccelerationTime(0.5)
+  setspeed(1)
+}
+
+onMounted(() => {
+  const timer = setInterval(() => {
+    time.value = Math.floor(scheduler.value.getTime())
+  }, 500)
+  return () => {
+    clearInterval(timer)
+  }
+})
 </script>
 
-<style scoped lang="less"></style>

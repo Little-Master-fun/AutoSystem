@@ -16,7 +16,7 @@
       <dv-button
         :bg="false"
         border="Border6"
-        @click="console.log('click')"
+        @click="test1Start"
         class="transition-transform duration-200 hover:scale-105"
         >任务一</dv-button
       >
@@ -51,12 +51,21 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const setTast = (value: any) => store.commit('setTestList', value)
 const setCarCount = (value: any) => store.commit('setCarCount', value)
+const settaskcont = (value: any) => store.commit('setTask', value)
 
 const test2Start = () => {
   setTast(task2)
   setCarCount(2)
   router.push('/scene')
 }
+const test1Start = () => {
+  setTast([])
+  setCarCount(3)
+  settaskcont(1)
+  router.push('/scene')
+}
+
+
 const visCar = ref(false)
 const changeVis = (val: boolean) => {
   visCar.value = val

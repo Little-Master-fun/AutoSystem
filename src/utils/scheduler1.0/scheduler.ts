@@ -15,15 +15,18 @@ export type TaskStatus = 'waiting' | 'in-progress' | 'done'
 
 export interface TaskDetail {
   taskId: number
+  materialId: number
+  type: string
   fromDevice: number
   toDevice: number
   createTime: number
   startTime: number | null
-  endTime: number | null
-  assignedCarId: number | null
+  carId: number | null
+  pickUpTime: number | null // 取货完成时间
+  dropOffTime: number | null // 放货完成时间
+  takenTime: number | null // 货物取走时间
   status: TaskStatus
   progress: number
-  type: string // 新增任务类型
 }
 
 export class Scheduler {
@@ -36,9 +39,10 @@ export class Scheduler {
   private deviceMap: Map<number, PortDevice> = new Map()
   private virtualClock: number = 0 // 虚拟时钟
   private assignedTask: Map<number, number> = new Map() // 以 carId 为 key 的任务 ID 映射
+  public isTasksOver: boolean = false // 是否任务结束
 
   // 新增：加速时间（单位：秒）
-  private accelerationTime: number = 0
+  private accelerationTime: number = 1
 
   constructor(cars: CarController[], deviceMap: Map<number, PortDevice>, trackLength: number) {
     this.cars = cars
@@ -53,6 +57,10 @@ export class Scheduler {
     this.accelerationTime = time
   }
 
+  // 获取时间
+  public getTime(): number {
+    return this.virtualClock
+  }
   // 获取加速时间
   public getAccelerationTime(): number {
     return this.accelerationTime
@@ -65,11 +73,11 @@ export class Scheduler {
 
   // 主调度入口：每帧调用一次
   public update(deltaTime: number) {
-    this.virtualClock += deltaTime // 更新虚拟时钟
+    this.virtualClock += deltaTime * this.accelerationTime // 更新虚拟时钟
     this.assignTasks()
     this.preventCollision()
-    this.cars.forEach((car) => car.update(deltaTime))
-    this.deviceMap.forEach((device) => device.update(deltaTime))
+    this.cars.forEach((car) => car.update(deltaTime * this.accelerationTime))
+    this.deviceMap.forEach((device) => device.update(deltaTime * this.accelerationTime))
   }
 
   // 获取当前虚拟时钟
@@ -110,7 +118,7 @@ export class Scheduler {
     for (const plan of assignmentPlans) {
       if (this.hasConflict(plan)) continue
 
-      // 评分：可以用总到达时间，也可以加入优先级、路径长度等
+      // 评分,用总到达时间
       const totalTime = plan.reduce((sum, a) => sum + a.arriveTime, 0)
       if (totalTime < bestScore) {
         bestScore = totalTime
@@ -129,26 +137,29 @@ export class Scheduler {
         const toPos = this.deviceToPosition(task.toDevice)
         a.car.assignTask(task, fromPos, toPos)
         const taskId = this.assignedTask.get(a.car.id)
-        if (typeof taskId === 'number') {
-          this.completeTask(taskId)
-        }
+        // if (typeof taskId === 'number') {
+        //   this.completeTask(taskId)
+        // }
         // 记录任务分配（用 assignedTasks 以 carId 为 key 也存一份）
         this.assignedTasks.set(Number(task.taskId), {
           taskId: Number(task.taskId),
+          materialId: Number(task.materialId),
+          type: task.type,
           fromDevice: Number(task.fromDevice),
           toDevice: Number(task.toDevice),
           createTime: Number(task.createTime),
           startTime: this.virtualClock,
-          endTime: null,
-          assignedCarId: a.car.id,
+          carId: a.car.id,
+          pickUpTime: null,
+          dropOffTime: null,
+          takenTime: null,
           status: 'in-progress',
           progress: 0,
-          type: task.type, // 新增任务类型
         })
         // 新增：以 carId 为 key 也存一份 taskId，便于通过 carId 查找任务
         this.assignedTask.set(a.car.id, task.taskId)
         console.log(
-          `✅ 分配任务：小车${a.car.id} 执行任务${task.taskId}，从${task.fromDevice}到${task.toDevice}`,
+          `分配任务：小车${a.car.id} 执行任务${task.taskId}，从${task.fromDevice}到${task.toDevice}`,
         )
       }
     }
@@ -160,24 +171,75 @@ export class Scheduler {
       taskDetail.progress = progress
       if (progress >= 1) {
         taskDetail.status = 'done'
-        taskDetail.endTime = this.virtualClock
+        taskDetail.takenTime = this.virtualClock
         this.completedTasks.set(taskId, taskDetail)
         this.assignedTasks.delete(taskId)
       }
     }
   }
+
+  // 拿取货物
+  public pickUpCargo(taskId: number) {
+    const taskDetail = this.assignedTasks.get(taskId) as TaskDetail
+    if (taskDetail) {
+      taskDetail.pickUpTime = this.virtualClock
+      taskDetail.status = 'in-progress'
+    }
+    console.log(taskDetail);
+    
+  }
+
+  // 放置货物
+  public dropOffCargo(taskId: number) {
+    const taskDetail = this.assignedTasks.get(taskId) as TaskDetail
+    if (taskDetail) {
+      taskDetail.dropOffTime = this.virtualClock
+      taskDetail.status = 'in-progress'
+    }
+  }
+
+  // 取走货物
+  public takeCargo(taskId: number) {
+    const taskDetail = this.assignedTasks.get(taskId) as TaskDetail
+    if (taskDetail) {
+      taskDetail.takenTime = this.virtualClock
+      taskDetail.status = 'done'
+      this.completedTasks.set(taskId, taskDetail)
+      this.assignedTasks.delete(taskId)
+    }
+  }
+
+
   // 获取任务进度
   public getTaskProgress(taskId: number): TaskDetail | undefined {
     return this.assignedTasks.get(taskId) as TaskDetail
   }
 
   // 完成任务
-  public completeTask(taskId: number | undefined) {
-    if (typeof taskId !== 'number') return
-    const taskDetail = this.assignedTasks.get(taskId) as TaskDetail
-    if (taskDetail) {
+  // 通过任务ID或物料ID完成任务
+  public completeTask(taskIdOrMaterialId: number | undefined, byMaterialId = false) {
+    if (typeof taskIdOrMaterialId !== 'number') return
+    let taskDetail: TaskDetail | undefined
+    let taskId: number | undefined
+
+    if (byMaterialId) {
+      // 通过物料ID查找任务
+      for (const [id, detail] of this.assignedTasks.entries()) {
+        if ((detail as TaskDetail).materialId === taskIdOrMaterialId) {
+          taskDetail = detail as TaskDetail
+          taskId = id
+          break
+        }
+      }
+    } else {
+      // 通过任务ID查找
+      taskDetail = this.assignedTasks.get(taskIdOrMaterialId) as TaskDetail
+      taskId = taskIdOrMaterialId
+    }
+
+    if (taskDetail && typeof taskId === 'number') {
       taskDetail.status = 'done'
-      taskDetail.endTime = this.virtualClock
+      taskDetail.takenTime = this.virtualClock
       this.completedTasks.set(taskId, taskDetail)
       this.assignedTasks.delete(taskId)
       // 反查 carId 记录也一并删除
@@ -187,10 +249,11 @@ export class Scheduler {
           break
         }
       }
-      console.log(`✅ 任务 ${taskId} 完成`)
+      console.log(`✅ 任务 ${taskId} 完成${byMaterialId ? `（物料ID: ${taskIdOrMaterialId}）` : ''}`)
     }
   }
 
+  // 判断两个小车的路径是否冲突
   private isPathConflict(a: Assignment, b: Assignment): boolean {
     // 1. 判断 b.port.position 是否在 a.car 路径 [a.from → a.port] 中
     const bInAPath = this.isInCircularPath(a.from, a.port.position, b.port.position)
@@ -272,17 +335,16 @@ export class Scheduler {
     return results
   }
 
-    //获取已分配任务
+  //获取已分配任务
   public getAssignedTasks(): TaskDetail[] {
     return Array.from(this.assignedTasks.values()).filter(
-      (v): v is TaskDetail => typeof v === 'object' && v !== null && 'taskId' in v
+      (v): v is TaskDetail => typeof v === 'object' && v !== null && 'taskId' in v,
     )
   }
   // 获取已完成任务
   public getCompletedTasks(): TaskDetail[] {
     return Array.from(this.completedTasks.values())
   }
-
 
   private isRangeOverlap(aStart: number, aEnd: number, bStart: number, bEnd: number): boolean {
     const inRange = (pos: number, from: number, to: number): boolean => {
@@ -357,6 +419,18 @@ export class Scheduler {
     // }
   }
 
+  // 返回小车的速度时间表
+  public getCarsSpeedTimeline() {
+    return {
+      time: this.virtualClock,
+      cars: this.cars.map((car) => ({
+        carId: car.id,
+        speed: car.getSpeed(),
+        status: car.getStatus(),
+      })),
+    }
+  }
+
   // 计算小车到达目标位置的时间（考虑加速时间）
   private calculateTimeToTarget(car: CarController, targetPos: number): number {
     // 直接计算当前位置到目标位置的距离
@@ -386,6 +460,23 @@ export class Scheduler {
         return totalDist === 0 ? 1 : Math.min(traveled / totalDist, 1)
       })(),
     }))
+  }
+
+  // 检测是否结束
+  public checkIfAllTasksDone(): boolean {
+    const allCarsIdle = this.cars.every(car => 
+      (car.getStatus() === 'idle' || car.getStatus() === 'cruising') && !car.task
+    )
+    const allDevicesIdle = Array.from(this.deviceMap.values()).every(
+      device => device.status === 'idle' || device.status === 'empty'
+    )
+    const allTasksDone = this.taskQueue.length === 0 && this.assignedTasks.size === 0
+
+    if (allTasksDone && allCarsIdle && allDevicesIdle) {
+      this.isTasksOver = true
+      return true
+    }
+    return false
   }
 
   // 设备编号 → 轨道坐标映射

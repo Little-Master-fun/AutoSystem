@@ -15,7 +15,7 @@ const handleClose = (key: string, keyPath: string[]) => {
 
 <template>
   <div class="h-screen flex w-full bg-[url('/images/pageBg.png')] bg-cover bg-center bg-no-repeat">
-    <el-menu
+    <!-- <el-menu
       default-active="2"
       class="el-menu-vertical-demo h-screen"
       style="border-right: 0"
@@ -47,7 +47,7 @@ const handleClose = (key: string, keyPath: string[]) => {
         <template #title>图表可视化</template>
       </el-menu-item>
     </el-menu>
-
+ -->
     <div class="flex-1 h-screen overflow-auto">
       <el-scrollbar height="100vh">
         <RouterView />

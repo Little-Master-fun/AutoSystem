@@ -12,6 +12,8 @@ export class PortDevice {
   // 新增：任务队列和当前物料ID
   private taskQueue: number[] = []
   public currentMaterialId: number | null = null
+  public scheduler: any = null // 任务调度器（可选）
+
 
   constructor(id: number, type: PortType, position: number) {
     this.id = id
@@ -19,11 +21,13 @@ export class PortDevice {
     this.position = position
   }
 
+  public setScheduler(scheduler: any) {
+    this.scheduler = scheduler
+  }
+
   // 新增：添加任务（物料ID）
   public addTask(materialId: number) {
     this.taskQueue.push(materialId)
-    console.log(`[Device ${this.id}] 添加任务，物料ID: ${materialId}`)
-
     // 如果当前没有物料且设备空闲，自动开始下一个任务
     if (!this.currentMaterialId && this.isAvailable()) {
       this.startNextTask()
@@ -45,12 +49,11 @@ export class PortDevice {
     if (this.type === 'inlet') {
       this.startOperation('loading', 3)
     } else if (this.type === 'out-interface') {
-      this.startOperation('loading', 50)
+      this.startOperation('loading', 5)
     } else if (this.type === 'in-interface' && this.status === 'idle') {
-      this.startOperation('unloading', 25)
+      this.startOperation('unloading', 2)
     } else if (this.type === 'outlet' && this.status === 'idle') {
-      this.startOperation('unloading', 30)
-      console.log('人工卸货')
+      this.startOperation('unloading', 3)
     }
   }
   // 新增：更新设备状态
@@ -60,6 +63,7 @@ export class PortDevice {
       if (this.timer <= 0) {
         this.timer = 0
         this.finishOperation()
+        
       }
     }
   }
@@ -69,11 +73,12 @@ export class PortDevice {
     if ((this.type === 'out-interface' || this.type === 'inlet') && this.status === 'loading') {
       this.hasCargo = true
       this.status = 'full'
-      console.log(`[Device ${this.id}] 装货完成，物料ID: ${this.currentMaterialId}`)
     }
     if ((this.type === 'outlet' || this.type === 'in-interface') && this.status === 'unloading') {
       this.hasCargo = false
       this.status = 'idle'
+      console.log(this.currentMaterialId);
+      
       this.currentMaterialId = null // 物料被取走
       this.startNextTask() // 自动开始下一个任务
     }
@@ -99,12 +104,10 @@ export class PortDevice {
       this.hasCargo = true
       this.status = 'full'
       this.currentMaterialId = materialId
-      console.log(`[Device ${this.id}] 卸货完成，物料ID: ${materialId}`)
       if (this.type === 'in-interface' && this.status === 'full') {
-        this.startOperation('unloading', 25) // 入口接口卸货25秒（取走）
+        this.startOperation('unloading', 2) // 入口接口卸货25秒（取走）
       } else if (this.type === 'outlet' && this.status === 'full') {
-        this.startOperation('unloading', 30) // 出库口卸货30秒
-        console.log('人工卸货')
+        this.startOperation('unloading', 3) // 出库口卸货30秒
       }
     }
   }
@@ -113,13 +116,15 @@ export class PortDevice {
     if (this.timer > 0) return // 忽略正在进行中的
     this.status = status
     this.timer = duration
-    console.log(`[Device ${this.id}] 开始 ${status}，预计 ${duration} 秒`)
   }
 
   public isBusy(): boolean {
     return this.timer > 0
   }
-
+  //返回物料编号
+  public getMaterialId(): number | null {
+    return this.currentMaterialId
+  }
   public isAvailable(): boolean {
     return !this.isBusy() && (this.status === 'idle' || this.status === 'empty')
   }

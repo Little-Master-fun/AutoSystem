@@ -16,6 +16,9 @@
     <TresDirectionalLight :position="[0, 2, 4]" :intensity="1.2" cast-shadow />
     <TresGridHelper />
   </TresCanvas>
+  <div class="absolute inset-0 flex items-center justify-center z-30" v-if="isTaskOver && taskCount != 1">
+    <EndCard />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -32,17 +35,21 @@ import { useRenderLoop } from '@tresjs/core'
 import { getPositionOnTrack } from '@/utils/senseData.ts'
 import Track from './tres/Track.vue'
 import Station from './tres/Station.vue'
+import EndCard from './EndCard.vue'
+
 
 //轨道设置函数
 const trackPoints = inittrackocar()
 const carCount = computed(() => store.state.carCount)
+const taskCount = computed(() => store.state.task)
+
 
 // 获取任务和设备信息
 const tasklist = computed(() => store.getters.testList)
 const deviceMap = getDeviceMap()
 console.log(tasklist.value);
 
-
+const isTaskOver = ref(false)
 const controller = computed(() => {
   const arr: CarController[] = []
   for (let i = 0; i < carCount.value; i++) {
@@ -129,7 +136,15 @@ for (let i = 1; i < trackPoints.length; i++) {
 }
 
 const scheduler = new Scheduler(controllers, deviceMap, totalLength)
-// 这里可以添加任务
+const speedValue = computed(() => store.state.speedvalue)
+// 给小车调度器
+controllers.forEach((car: any) => {
+  car.setScheduler(scheduler)
+})
+// 给设备调度器
+allDevices.forEach((device: any) => {
+  device.setScheduler(scheduler)
+})
 
 tasklist.value.forEach((task: any) => {
   scheduler.addTask({
@@ -148,11 +163,19 @@ store.commit('setScheduler', scheduler)
 
 let lastTime = performance.now()
 
+setInterval(() => {
+  isTaskOver.value = scheduler.checkIfAllTasksDone()
+}, 1000)
+
 // 动画循环
 function animate(current: number) {
   const delta = (current - lastTime) / 1000 // 秒
   lastTime = current
   scheduler.update(delta) // 移动 + 装卸 + 状态更新
+  if(speedValue.value == 2) {
+    scheduler.update(delta)
+    
+  }
   requestAnimationFrame(animate)
 }
 

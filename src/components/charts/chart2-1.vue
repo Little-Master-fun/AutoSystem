@@ -2,12 +2,13 @@
   <div class="h-full w-full flex flex-col justify-center items-center">
     <div class="text-white flex items-center justify-between w-full pl-3">
       <div class="flex items-center justify-start">
-      <el-icon color="#18ccf5"><DataLine /></el-icon>
-      <p style="font-family: 'tel'">小车状态</p>
-      <dv-decoration3 style="width: 30%; height: 25px" />
-
+        <el-icon color="#18ccf5"><DataLine /></el-icon>
+        <p style="font-family: 'tel'">小车状态</p>
+        <dv-decoration3 style="width: 30%; height: 25px" />
       </div>
-      <div class="h-5 overflow-hidden rounded-2xl flex items-center justify-center mr-3 bg-[#222c38] ">
+      <div
+        class="h-5 overflow-hidden rounded-2xl flex items-center justify-center mr-3 bg-[#222c38]"
+      >
         <el-select
           v-model="carIndex"
           placeholder="Select"
@@ -35,7 +36,10 @@
       <div class="h-full flex-1" id="acceleration"></div>
       <div class="h-full flex-1" id="speed"></div>
     </div>
-    <div class="text-white relative bottom-6"><p>当前状态：{{ carStatus }}</p></div>
+    <div class="text-cyan-400 flex justify-center absolute bottom-10 gap-3" style="font-family: 'tel'">
+      <p>执行任务：<span >{{ getTask(carStatus?.task) || '无' }}</span></p>
+      <p>携带货物：<span>{{ carStatus.hasMaterial ? carStatus.task.materialId : '无' }}</span></p>
+    </div>
     <dv-decoration5 :dur="2" style="width: 90%; height: 40px" class="mb-3 absolute bottom-0" />
   </div>
 </template>
@@ -49,7 +53,7 @@ import store from '@/store'
 const controllers = computed(() => store.getters.controllers)
 const carIndex = ref(0)
 
-const carStatus = ref('')
+const carStatus = ref<any>({})
 
 const options = computed(() => {
   return controllers.value.map((item: any, index: number) => {
@@ -173,6 +177,16 @@ option_S = {
   ],
 }
 
+interface TaskType {
+  fromDevice?: string | number
+  toDevice?: string | number
+}
+
+const getTask = (task: TaskType) => {
+  if (!task || !task.fromDevice || !task.toDevice) return ''
+  return `${task.fromDevice}->${task.toDevice}`
+}
+
 onMounted(() => {
   var accelerationDom = document.getElementById('acceleration')!
   var acceleration = echarts.init(accelerationDom)
@@ -230,17 +244,16 @@ onMounted(() => {
     overflow: hidden;
     box-sizing: border-box;
   }
-  .el-select__wrapper{
+  .el-select__wrapper {
     background-color: #222c38 !important;
     border: none !important;
     box-shadow: none;
   }
-  .el-select__wrapper.is-focused{
+  .el-select__wrapper.is-focused {
     box-shadow: none;
-}
-  .el-select__wrapper:hover{
+  }
+  .el-select__wrapper:hover {
     box-shadow: none;
-}
-
+  }
 }
 </style>

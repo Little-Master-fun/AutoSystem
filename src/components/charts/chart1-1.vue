@@ -23,7 +23,7 @@
               <td class="px-4 py-2 border-b border-[#2a2f4d] text-center">{{ row.type }}</td>
               <td class="px-4 py-2 border-b border-[#2a2f4d] text-center">{{ row.fromDevice }}</td>
               <td class="px-4 py-2 border-b border-[#2a2f4d] text-center">{{ row.toDevice }}</td>
-                <td class="px-4 py-2 border-b border-[#2a2f4d] text-center whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px]">进行中</td>
+                <td class="px-4 py-2 border-b border-[#2a2f4d] text-center whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px] text-green-500">进行中</td>
             </tr>
             <tr v-for="(row, idx) in testlist" :key="'test-' + idx" class="hover:bg-[#23284a]">
               <td class="px-4 py-2 border-b border-[#2a2f4d] text-center">{{ row.type }}</td>
@@ -49,29 +49,6 @@ import { DataLine } from '@element-plus/icons-vue'
 import store from '@/store'
 import { computed, onMounted, ref } from 'vue'
 
-const tableData = [
-  {
-    date: '2016-05-03',
-    name: 'Tom',
-    address: 'Angeles',
-  },
-  {
-    date: '2016-05-02',
-    name: 'Tom',
-    address: 'No. 189, Greles',
-  },
-  {
-    date: '2016-05-04',
-    name: 'Tom',
-    address: 'No. 18ngeles',
-  },
-  {
-    date: '2016-05-01',
-    name: 'Tom',
-    address: 'No. 189les',
-  },
-]
-
 const testlist = ref<any[]>([])
 interface AssignedTask {
   type: string
@@ -89,6 +66,7 @@ onMounted(() => {
     testlist.value = testlists
     assignedTask.value = scheduler.value.getAssignedTasks()
     completedTask.value = scheduler.value.getCompletedTasks()
+    
   }
 
   updateTestList()

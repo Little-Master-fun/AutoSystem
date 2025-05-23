@@ -27,6 +27,10 @@ export default createStore({
     carCount: 1,
     controllers: [] as CarController[],
     scheduler: null as Scheduler | null,
+    speedTable: [],
+    taskData: [],
+    task: 2,
+    speedvalue: 1,
   },
   mutations: {
     setTestList(state: { testList: TaskItem[] }, value: TaskItem[]) {
@@ -52,6 +56,15 @@ export default createStore({
     ) {
       state.scheduler = scheduler
     },
+    addSpeedTable(state: { speedTable: any[] }, value: any) {
+      state.speedTable.push(value)
+    },
+    setTask(state: { task: number }, value: number) {
+      state.task = value
+    },
+    setSpeedValue(state: { speedvalue: number }, value: number) {
+      state.speedvalue = value
+    }
   },
   getters: {
     controllers: (state: { testList: TaskItem[]; carData: any[]; controllers: CarController[] }) =>

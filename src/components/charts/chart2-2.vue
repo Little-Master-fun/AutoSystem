@@ -6,64 +6,75 @@
       <dv-decoration1 style="width: 30%; height: 20px" />
     </div>
     <div class="h-[80%] w-full flex justify-center items-center">
-      <dv-scroll-board
-        :config="config"
-        style="width: 90%; height: 100%"
-        @mouseover="mouseoverHandler"
-        @click="clickHandler"
-      />
+      <el-scrollbar height="100%" class="w-[95%]">
+        <p class="text-white text-[12px] mb-2"></p>
+        <table class="min-w-full bg-[#181c2f] text-white border-collapse">
+          <thead class="sticky top-0 bg-[#23284a]">
+            <tr>
+              <th class="px-2 py-1 border-b border-[#2a2f4d] text-[12px] w-20">站口ID</th>
+              <th class="px-4 py-1 border-b border-[#2a2f4d] text-[12px] w-32">类型</th>
+              <th class="px-4 py-1 border-b border-[#2a2f4d] text-[12px] w-32">状态</th>
+              <th class="px-4 py-1 border-b border-[#2a2f4d] text-[12px] w-16">物料</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, idx) in rows" :key="'assigned-' + idx" class="hover:bg-[#23284a]">
+              <td class="px-4 py-2 border-b border-[#2a2f4d] text-center">{{ idx+1 }}</td>
+              <td class="px-4 py-2 border-b border-[#2a2f4d] text-center">{{ row[0] }}</td>
+              <td class="px-4 py-2 border-b border-[#2a2f4d] text-center">{{ row[1] }}</td>
+              <td
+                class="px-4 py-2 border-b border-[#2a2f4d] text-center whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px] text-green-500"
+              >
+                {{ row[2] }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </el-scrollbar>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { DataLine } from '@element-plus/icons-vue'
+import { getDeviceStatusById, getDeviceMap } from '@/utils/scheduler1.0/PortDevice'
+import { onMounted, reactive, ref } from 'vue'
+import type { ScrollBoard } from '@kjgl77/datav-vue3'
 
-import { reactive } from 'vue'
-const tableData = [
-  {
-    date: '2016-05-03',
-    name: 'Tom',
-    address: 'No. 189, Grove St, Los Angeles',
-  },
-  {
-    date: '2016-05-02',
-    name: 'Tom',
-    address: 'No. 189, Grove St, Los Angeles',
-  },
-  {
-    date: '2016-05-04',
-    name: 'Tom',
-    address: 'No. 189, Grove St, Los Angeles',
-  },
-  {
-    date: '2016-05-01',
-    name: 'Tom',
-    address: 'No. 189, Grove St, Los Angeles',
-  },
-]
-const config = reactive({
-  header: ['列1', '列2', '列3'],
-  data: [
-    ['行1列1', '行1列2', '行1列3'],
-    ['行2列1', '行2列2', '行2列3'],
-    ['行3列1', '行3列2', '行3列3'],
-    ['行4列1', '行4列2', '行4列3'],
-    ['行5列1', '行5列2', '行5列3'],
-    ['行6列1', '行6列2', '行6列3'],
-    ['行7列1', '行7列2', '行7列3'],
-    ['行8列1', '行8列2', '行8列3'],
-    ['行9列1', '行9列2', '行9列3'],
-    ['行10列1', '行10列2', '行10列3'],
-  ],
-  index: true,
-  columnWidth: [50],
-  align: ['center'],
+const rows = ref<any[]>([])
+
+onMounted(() => {
+    const deviceMap = getDeviceMap()
+
+  setInterval(() => {
+    rows.value = Array.from(deviceMap.values()).map((device) => {
+      return [
+        {
+          inlet: '进货口',
+          outlet: '出货口',
+          'in-interface': '进货接口',
+          'out-interface': '出货接口',
+        }[device.type] || '未知类型',
+        {
+          idle: '空闲',
+          waiting: '等待',
+          loading: '上货中',
+          unloading: '卸货中',
+          full: '有货',
+          empty: '没货',
+        }[device.status] || '未知状态',
+        device.getMaterialId(),
+      ]
+      
+      
+    })
+  }, 1000)
+
+  // updateRows([['行1列1', '行1列2', '行1列3']])
+  // for (let i = 0; i < data.length; i++) {
+  //   const deviceId = deviceMap[i]
+  //   const status = getDeviceStatusById(deviceId)
+  //   data[i][0] = status
+  // }
 })
-
-const mouseoverHandler = (e: any) => {
-}
-
-const clickHandler = (e: any) => {
-}
 </script>
