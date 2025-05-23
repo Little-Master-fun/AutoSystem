@@ -47,7 +47,6 @@ export class Scheduler {
   constructor(cars: CarController[], deviceMap: Map<number, PortDevice>, trackLength: number) {
     this.cars = cars
     this.trackLength = trackLength
-    console.log(`轨道长度：${this.trackLength}`)
 
     this.deviceMap = deviceMap
   }
@@ -158,9 +157,6 @@ export class Scheduler {
         })
         // 新增：以 carId 为 key 也存一份 taskId，便于通过 carId 查找任务
         this.assignedTask.set(a.car.id, task.taskId)
-        console.log(
-          `分配任务：小车${a.car.id} 执行任务${task.taskId}，从${task.fromDevice}到${task.toDevice}`,
-        )
       }
     }
   }
@@ -185,7 +181,6 @@ export class Scheduler {
       taskDetail.pickUpTime = this.virtualClock
       taskDetail.status = 'in-progress'
     }
-    console.log(taskDetail)
   }
 
   // 放置货物
@@ -250,9 +245,6 @@ export class Scheduler {
           break
         }
       }
-      console.log(
-        `✅ 任务 ${taskId} 完成${byMaterialId ? `（物料ID: ${taskIdOrMaterialId}）` : ''}`,
-      )
     }
   }
 
@@ -398,7 +390,6 @@ export class Scheduler {
           if (car.isCollision && car.targetSpeed !== car.getMaxStraightSpeed()) {
             car.setTargetSpeed(car.getMaxStraightSpeed())
             car.isCollision = false
-            console.log(`小车${car.id} 恢复正常速度`)
           }
         }
       }

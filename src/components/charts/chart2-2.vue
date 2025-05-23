@@ -38,16 +38,22 @@
 <script setup lang="ts">
 import { DataLine } from '@element-plus/icons-vue'
 import { getDeviceStatusById, getDeviceMap } from '@/utils/scheduler1.0/PortDevice'
-import { onMounted, reactive, ref } from 'vue'
-import type { ScrollBoard } from '@kjgl77/datav-vue3'
+import { onMounted, computed, ref } from 'vue'
+import store from '@/store'
+
+type DeviceType = 'inlet' | 'outlet' | 'in-interface' | 'out-interface';
+type DeviceStatus = 'idle' | 'waiting' | 'loading' | 'unloading' | 'full' | 'empty';
+
+interface Device {
+  type: DeviceType;
+  status: DeviceStatus;
+  getMaterialId: () => string;
+}
+    const deviceMap = computed(() => store.state.deviceMap)
 
 const rows = ref<any[]>([])
-
-onMounted(() => {
-    const deviceMap = getDeviceMap()
-
-  setInterval(() => {
-    rows.value = Array.from(deviceMap.values()).map((device) => {
+    rows.value = Array.from(deviceMap.value.values()).map((deviceUnknown) => {
+      const device = deviceUnknown as Device;
       return [
         {
           inlet: '进货口',
@@ -65,16 +71,32 @@ onMounted(() => {
         }[device.status] || '未知状态',
         device.getMaterialId(),
       ]
-      
-      
+    })
+
+onMounted(() => {
+
+  setInterval(() => {
+    
+    rows.value = Array.from(deviceMap.value.values()).map((deviceUnknown) => {
+      const device = deviceUnknown as Device;
+      return [
+        {
+          inlet: '进货口',
+          outlet: '出货口',
+          'in-interface': '进货接口',
+          'out-interface': '出货接口',
+        }[device.type] || '未知类型',
+        {
+          idle: '空闲',
+          waiting: '等待',
+          loading: '上货中',
+          unloading: '卸货中',
+          full: '有货',
+          empty: '没货',
+        }[device.status] || '未知状态',
+        device.getMaterialId(),
+      ]
     })
   }, 1000)
-
-  // updateRows([['行1列1', '行1列2', '行1列3']])
-  // for (let i = 0; i < data.length; i++) {
-  //   const deviceId = deviceMap[i]
-  //   const status = getDeviceStatusById(deviceId)
-  //   data[i][0] = status
-  // }
 })
 </script>

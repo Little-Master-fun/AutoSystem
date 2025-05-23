@@ -54,6 +54,7 @@ function updateColor() {
   }
 }
 
+
 onMounted(() => {
   updateColor()
   intervalId = window.setInterval(updateColor, 100)

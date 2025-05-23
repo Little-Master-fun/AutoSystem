@@ -31,6 +31,7 @@ export default createStore({
     taskData: [],
     task: 2,
     speedvalue: 1,
+    deviceMap: []
   },
   mutations: {
     setTestList(state: { testList: TaskItem[] }, value: TaskItem[]) {
@@ -64,6 +65,9 @@ export default createStore({
     },
     setSpeedValue(state: { speedvalue: number }, value: number) {
       state.speedvalue = value
+    },
+    setDeviceMap(state: { deviceMap: any[] }, value: any) {
+      state.deviceMap = value
     }
   },
   getters: {

@@ -33,6 +33,12 @@ export class CarController {
   // 环形轨道总长度（可根据实际轨道长度调整）
   private trackLength = 99.478
 
+  // 虚拟时间相关
+  private loadingTimer: number = 0
+  private unloadingTimer: number = 0
+  private loadingDuration: number = 7.5 // 秒
+  private unloadingDuration: number = 7.5 // 秒
+
   constructor(id: number, deviceMap: Map<number, PortDevice>, initialPosition = 0) {
     this.id = id
     this.deviceMap = deviceMap
@@ -70,6 +76,42 @@ export class CarController {
       this.updateMotion(deltaTime)
     }
 
+    // 虚拟时间处理 loading/unloading
+    if (this.status === 'loading') {
+      this.loadingTimer += deltaTime
+      if (this.loadingTimer >= this.loadingDuration) {
+        this.loadingTimer = 0
+        this.status = 'loaded'
+        this.currentStopIndex++
+        this.setTarget(this.stopPoints[1])
+        this.status = 'moving'
+        this.hasMaterial = true
+        this.scheduler?.pickUpCargo(this.task?.taskId || 0)
+      }
+      return
+    }
+    if (this.status === 'unloading') {
+      this.unloadingTimer += deltaTime
+      if (this.unloadingTimer >= this.unloadingDuration) {
+        this.unloadingTimer = 0
+        const materialId = this.task?.materialId || 0
+        const taskId = this.task?.taskId || 0
+        this.status = 'idle'
+        this.task = null
+        this.stopPoints = []
+        this.currentStopIndex = 0
+        // 卸货后自动触发目标设备的下一个任务
+        if (this.portTo) {
+          this.portTo.onMaterialPlaced(materialId)
+        }
+        this.hasMaterial = false
+        this.scheduler?.dropOffCargo(taskId)
+        // console.log(materialId);
+        // this.scheduler?.completeTask(materialId,true)
+      }
+      return
+    }
+
     if (this.status === 'moving' || this.status === 'cruising' || this.status === 'waiting') {
       // 到达目标点且速度为0
       if (this.reachedTarget() && this.speed === 0) {
@@ -105,16 +147,10 @@ export class CarController {
 
           if (device.status === 'full' && device.currentMaterialId === this.task?.materialId) {
             this.status = 'loading'
+            this.loadingTimer = 0
             // 取走物料
             device.onMaterialTaken()
-            setTimeout(() => {
-              this.status = 'loaded'
-              this.currentStopIndex++
-              this.setTarget(this.stopPoints[1])
-              this.status = 'moving'
-              this.hasMaterial = true
-              this.scheduler?.pickUpCargo(this.task?.taskId || 0)
-            }, 7500)
+            // loading 完成后在 update 里处理
           } else {
             // 等设备准备好再装货
             this.status = 'waiting'
@@ -125,24 +161,10 @@ export class CarController {
         else if (this.currentStopIndex === 1) {
           if (device.status === 'idle') {
             this.status = 'unloading'
+            this.unloadingTimer = 0
             // 卸货时将物料ID放到目标设备
             device.currentMaterialId = this.task?.materialId || null
-            setTimeout(() => {
-              const materialId = this.task?.materialId || 0
-              const taskId = this.task?.taskId || 0
-              this.status = 'idle'
-              this.task = null
-              this.stopPoints = []
-              this.currentStopIndex = 0
-              // 卸货后自动触发目标设备的下一个任务
-              device.onMaterialPlaced(materialId)
-              this.hasMaterial = false
-              this.scheduler?.dropOffCargo(taskId)
-              console.log(materialId);
-              
-                    // this.scheduler?.completeTask(materialId,true) // 调用调度器完成任务
-
-            }, 7500)
+            // unloading 完成后在 update 里处理
           } else {
             this.status = 'waiting'
           }
@@ -156,32 +178,16 @@ export class CarController {
         if (this.currentStopIndex === 0) {
           if (device.status === 'full' && device.currentMaterialId === this.task?.materialId) {
             this.status = 'loading'
+            this.loadingTimer = 0
             device.onMaterialTaken()
-            setTimeout(() => {
-              this.status = 'loaded'
-              this.currentStopIndex++
-              this.setTarget(this.stopPoints[1])
-              this.status = 'moving'
-              this.hasMaterial = true
-              this.scheduler?.pickUpCargo(this.task?.taskId || 0)
-            }, 7500)
+            // loading 完成后在 update 里处理
           }
         } else if (this.currentStopIndex === 1) {
           if (device.status === 'idle') {
             this.status = 'unloading'
+            this.unloadingTimer = 0
             device.currentMaterialId = this.task?.materialId || null
-            setTimeout(() => {
-              const materialId = this.task?.materialId || 0
-              const taskId = this.task?.taskId || 0
-              this.status = 'idle'
-              this.task = null
-              this.stopPoints = []
-              this.currentStopIndex = 0
-              this.hasMaterial = false
-              // 完成任务
-              this.scheduler?.dropOffCargo(taskId)
-              device.onMaterialPlaced(materialId)
-            }, 7500)
+            // unloading 完成后在 update 里处理
           }
         }
       }

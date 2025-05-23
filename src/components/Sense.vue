@@ -5,7 +5,11 @@
     <!-- 轨道线 -->
     <Track />
     <!-- 小车 -->
-    <TresMesh v-for="(car, index) in controllers" :key="car.id" :ref="el => setCarRefs(el, index)">
+    <TresMesh
+      v-for="(car, index) in controllers"
+      :key="car.id"
+      :ref="(el) => setCarRefs(el, index)"
+    >
       <TresBoxGeometry :args="[1.2, 0.2, 1.2]" />
       <TresMeshStandardMaterial :color="color(status[index]?.status ?? 'idle')" />
     </TresMesh>
@@ -16,7 +20,10 @@
     <TresDirectionalLight :position="[0, 2, 4]" :intensity="1.2" cast-shadow />
     <TresGridHelper />
   </TresCanvas>
-  <div class="absolute inset-0 flex items-center justify-center z-30" v-if="isTaskOver && taskCount != 1">
+  <div
+    class="absolute inset-0 flex items-center justify-center z-30"
+    v-if="isTaskOver && taskCount != 1"
+  >
     <EndCard />
   </div>
 </template>
@@ -37,22 +44,21 @@ import Track from './tres/Track.vue'
 import Station from './tres/Station.vue'
 import EndCard from './EndCard.vue'
 
-
 //轨道设置函数
 const trackPoints = inittrackocar()
 const carCount = computed(() => store.state.carCount)
 const taskCount = computed(() => store.state.task)
 
-
 // 获取任务和设备信息
 const tasklist = computed(() => store.getters.testList)
 const deviceMap = getDeviceMap()
 
+const setDeviceMap = (value: any) => store.commit('setDeviceMap', value)
 const isTaskOver = ref(false)
 const controller = computed(() => {
   const arr: CarController[] = []
   for (let i = 0; i < carCount.value; i++) {
-    arr.push(new CarController(i + 1, deviceMap, 73.47 - i * 2.2))//2.2
+    arr.push(new CarController(i + 1, deviceMap, 73.47 - i * 2.2)) //2.2
   }
   return arr
 })
@@ -122,8 +128,7 @@ onLoop(() => {
 
     // 更新状态（如果你要显示）
     status.value[i].status = car.getDisplayProps().status
-    
-  }  
+  }
 })
 
 // 计算轨道长度
@@ -144,6 +149,8 @@ controllers.forEach((car: any) => {
 deviceMap.forEach((device: any) => {
   device.setScheduler(scheduler)
 })
+
+setDeviceMap(deviceMap)
 
 tasklist.value.forEach((task: any) => {
   scheduler.addTask({
@@ -168,13 +175,15 @@ setInterval(() => {
 
 // 动画循环
 function animate(current: number) {
-  const delta = 0.016// 秒
+  const delta = 0.016 // 秒
   lastTime = current
   scheduler.update(delta) // 移动 + 装卸 + 状态更新
   // 根据 speedValue.value 的值调用 scheduler.update(delta) 多次
-  const times = Math.max(1, Math.floor(speedValue.value));
-  for (let i = 0; i < times; i++) {
-    scheduler.update(delta);
+  const times = Math.max(1, Math.floor(speedValue.value))
+  if (times > 1) {
+    for (let i = 0; i < times -1; i++) {
+      scheduler.update(delta)
+    }
   }
   requestAnimationFrame(animate)
 }
@@ -186,15 +195,22 @@ onMounted(() => {
 // 小车状态函数
 function color(status: string) {
   switch (status) {
-    case 'idle': return '#2196f3'
-    case 'moving': return '#4caf50'
-    case 'loading': return '#ff9800'
-    case 'loaded': return '#673ab7'
-    case 'unloading': return '#f44336'
-    case 'waiting': return '#ffeb3b'
-    case 'cruising': return '#3f51b5'
-    default: return '#9e9e9e'
+    case 'idle':
+      return '#2196f3'
+    case 'moving':
+      return '#4caf50'
+    case 'loading':
+      return '#ff9800'
+    case 'loaded':
+      return '#673ab7'
+    case 'unloading':
+      return '#f44336'
+    case 'waiting':
+      return '#ffeb3b'
+    case 'cruising':
+      return '#3f51b5'
+    default:
+      return '#9e9e9e'
   }
 }
-
 </script>
