@@ -138,6 +138,10 @@ export class CarController {
               device.onMaterialPlaced(materialId)
               this.hasMaterial = false
               this.scheduler?.dropOffCargo(taskId)
+              console.log(materialId);
+              
+                    // this.scheduler?.completeTask(materialId,true) // 调用调度器完成任务
+
             }, 7500)
           } else {
             this.status = 'waiting'

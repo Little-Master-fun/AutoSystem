@@ -185,8 +185,7 @@ export class Scheduler {
       taskDetail.pickUpTime = this.virtualClock
       taskDetail.status = 'in-progress'
     }
-    console.log(taskDetail);
-    
+    console.log(taskDetail)
   }
 
   // 放置货物
@@ -209,7 +208,6 @@ export class Scheduler {
     }
   }
 
-
   // 获取任务进度
   public getTaskProgress(taskId: number): TaskDetail | undefined {
     return this.assignedTasks.get(taskId) as TaskDetail
@@ -218,7 +216,6 @@ export class Scheduler {
   // 完成任务
   // 通过任务ID或物料ID完成任务
   public completeTask(taskIdOrMaterialId: number | undefined, byMaterialId = false) {
-    if (typeof taskIdOrMaterialId !== 'number') return
     let taskDetail: TaskDetail | undefined
     let taskId: number | undefined
 
@@ -228,11 +225,15 @@ export class Scheduler {
         if ((detail as TaskDetail).materialId === taskIdOrMaterialId) {
           taskDetail = detail as TaskDetail
           taskId = id
+          console.log('reach');
+          
           break
         }
       }
     } else {
       // 通过任务ID查找
+      if (typeof taskIdOrMaterialId !== 'number') return
+
       taskDetail = this.assignedTasks.get(taskIdOrMaterialId) as TaskDetail
       taskId = taskIdOrMaterialId
     }
@@ -249,7 +250,9 @@ export class Scheduler {
           break
         }
       }
-      console.log(`✅ 任务 ${taskId} 完成${byMaterialId ? `（物料ID: ${taskIdOrMaterialId}）` : ''}`)
+      console.log(
+        `✅ 任务 ${taskId} 完成${byMaterialId ? `（物料ID: ${taskIdOrMaterialId}）` : ''}`,
+      )
     }
   }
 
@@ -381,9 +384,6 @@ export class Scheduler {
             if (car.targetSpeed !== 0 || !car.isCollision) {
               car.setTargetSpeed(0)
               car.isCollision = true
-              console.log(
-                `小车${car.id} 减速，前车${front.id} 状态：${front.status} 距离：${distance}`,
-              )
             }
           } else {
             // 前车也在移动，后车减速到不超过前车速度
@@ -391,9 +391,6 @@ export class Scheduler {
             if (car.targetSpeed !== newSpeed) {
               car.setTargetSpeed(newSpeed)
               car.isCollision = true
-              console.log(
-                `小车${car.id} 跟车减速，前车${front.id} 状态：${front.status} 距离：${distance}`,
-              )
             }
           }
         } else {
@@ -464,11 +461,11 @@ export class Scheduler {
 
   // 检测是否结束
   public checkIfAllTasksDone(): boolean {
-    const allCarsIdle = this.cars.every(car => 
-      (car.getStatus() === 'idle' || car.getStatus() === 'cruising') && !car.task
+    const allCarsIdle = this.cars.every(
+      (car) => (car.getStatus() === 'idle' || car.getStatus() === 'cruising') && !car.task,
     )
     const allDevicesIdle = Array.from(this.deviceMap.values()).every(
-      device => device.status === 'idle' || device.status === 'empty'
+      (device) => device.status === 'idle' || device.status === 'empty',
     )
     const allTasksDone = this.taskQueue.length === 0 && this.assignedTasks.size === 0
 

@@ -23,6 +23,7 @@ export class PortDevice {
 
   public setScheduler(scheduler: any) {
     this.scheduler = scheduler
+    
   }
 
   // 新增：添加任务（物料ID）
@@ -40,10 +41,8 @@ export class PortDevice {
 
     // 只在设备空闲或empty时才取下一个任务
     if (!this.isAvailable()) return
-    console.log(this.taskQueue);
     
     this.currentMaterialId = this.taskQueue.shift() || null
-    console.log(this.taskQueue);
     
     // 根据类型自动开始装/卸货，并使用不同的时间
     if (this.type === 'inlet') {
@@ -77,7 +76,7 @@ export class PortDevice {
     if ((this.type === 'outlet' || this.type === 'in-interface') && this.status === 'unloading') {
       this.hasCargo = false
       this.status = 'idle'
-      console.log(this.currentMaterialId);
+      this.scheduler?.completeTask(this.currentMaterialId, true) // 调用调度器完成任务
       
       this.currentMaterialId = null // 物料被取走
       this.startNextTask() // 自动开始下一个任务

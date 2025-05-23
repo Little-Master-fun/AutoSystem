@@ -47,7 +47,6 @@ const taskCount = computed(() => store.state.task)
 // 获取任务和设备信息
 const tasklist = computed(() => store.getters.testList)
 const deviceMap = getDeviceMap()
-console.log(tasklist.value);
 
 const isTaskOver = ref(false)
 const controller = computed(() => {
@@ -142,7 +141,7 @@ controllers.forEach((car: any) => {
   car.setScheduler(scheduler)
 })
 // 给设备调度器
-allDevices.forEach((device: any) => {
+deviceMap.forEach((device: any) => {
   device.setScheduler(scheduler)
 })
 
@@ -169,12 +168,13 @@ setInterval(() => {
 
 // 动画循环
 function animate(current: number) {
-  const delta = (current - lastTime) / 1000 // 秒
+  const delta = 0.016// 秒
   lastTime = current
   scheduler.update(delta) // 移动 + 装卸 + 状态更新
-  if(speedValue.value == 2) {
-    scheduler.update(delta)
-    
+  // 根据 speedValue.value 的值调用 scheduler.update(delta) 多次
+  const times = Math.max(1, Math.floor(speedValue.value));
+  for (let i = 0; i < times; i++) {
+    scheduler.update(delta);
   }
   requestAnimationFrame(animate)
 }

@@ -24,7 +24,7 @@
         />
       </div>
       <dv-decoration-10 style="width: 20%; height: 5px; transform: rotate(180deg)" />
-      <div class=" absolute bottom-0 left-5 text-cyan-400" style="font-family: tel">
+      <div class="absolute bottom-0 left-5 text-cyan-400" style="font-family: tel">
         <p>当前时间：{{ time }}</p>
       </div>
       <button class="absolute right-5 bottom-0 text-white" @click="speedUp">
@@ -72,16 +72,23 @@ import { computed, onMounted, ref } from 'vue'
 
 const time = ref<any>(0)
 const scheduler = computed(() => store.getters.scheduler)
-const setspeed  = (value: any) => store.commit('setSpeedValue', value)
+const setspeed = (value: any) => store.commit('setSpeedValue', value)
+const speedCount = ref(1)
 
 const speedUp = () => {
-  setspeed(2)
-    scheduler.value.setAccelerationTime(1)
-
+  speedCount.value += 1
+  if (speedCount.value > 8) {
+    speedCount.value = 8
+  }
+  setspeed(speedCount.value)
+  scheduler.value.setAccelerationTime(1)
 }
 const speedDown = () => {
-  scheduler.value.setAccelerationTime(0.5)
-  setspeed(1)
+  speedCount.value -= 1
+  if (speedCount.value < 1) {
+    speedCount.value = 1
+    scheduler.value.setAccelerationTime(0.5)
+  }
 }
 
 onMounted(() => {
@@ -93,4 +100,3 @@ onMounted(() => {
   }
 })
 </script>
-
