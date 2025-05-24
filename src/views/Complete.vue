@@ -30,6 +30,7 @@
           <el-radio-button label="任务" value=false />
         </el-radio-group>
       </div>
+      <el-button class="absolute right-2 bottom-0" type="primary" @click="backToHome">返回首页</el-button>
     </div>
     <!-- 小车速度 -->
     <div class="flex items-center w-full mt-4 flex-col h-[90%]" v-if="carTable == 'true'">
@@ -164,6 +165,8 @@ import { onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
 import store from '@/store'
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
+
 
 const addSpeedTable = (value: any) => store.commit('addSpeedTable', value)
 const getSpeedTable = computed(() => store.state.speedTable)
@@ -173,6 +176,12 @@ const carspeedTable = computed(() => store.state.carSpeedTable)
 const carTable = ref('true')
 const scheduler = computed(() => store.getters.scheduler)
 const completeTask = scheduler.value?.getCompletedTaskDetails()
+const router = useRouter()
+
+const backToHome = () => {
+  store.commit('resetState')
+  router.push('/')
+}
 
 function updateChart() {
   if (!chart) return

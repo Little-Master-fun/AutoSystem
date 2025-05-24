@@ -12,28 +12,30 @@ export interface TaskItem {
   createTime: number
 }
 
+const getDefaultState = () => ({
+  testList: [
+    {
+      taskId: 1,
+      materialId: '101',
+      type: '出库',
+      fromDevice: 17,
+      toDevice: 1,
+      createTime: Date.now(),
+    }
+  ] as TaskItem[],
+  carCount: 1,
+  controllers: [] as CarController[],
+  scheduler: null as Scheduler | null,
+  speedTable: [],
+  taskData: [],
+  task: 2,
+  speedvalue: 1,
+  deviceMap: [],
+  carSpeedTable: []
+})
+
 export default createStore({
-  state: {
-    testList: [
-      {
-        taskId: 1,
-        materialId: '101',
-        type: '出库',
-        fromDevice: 17,
-        toDevice: 1,
-        createTime: Date.now(),
-      }
-    ] as TaskItem[],
-    carCount: 1,
-    controllers: [] as CarController[],
-    scheduler: null as Scheduler | null,
-    speedTable: [],
-    taskData: [],
-    task: 2,
-    speedvalue: 1,
-    deviceMap: [],
-    carSpeedTable: []
-  },
+  state: getDefaultState(),
   mutations: {
     setTestList(state: { testList: TaskItem[] }, value: TaskItem[]) {
       state.testList = value
@@ -72,7 +74,10 @@ export default createStore({
     },
     addCarSpeedTable(state: { carSpeedTable: any[] }, value: any) {
       state.carSpeedTable.push(value)
-    }
+    },
+    resetState(state: any) {
+      Object.assign(state, getDefaultState())
+    },
   },
   getters: {
     controllers: (state: { testList: TaskItem[]; carData: any[]; controllers: CarController[] }) =>

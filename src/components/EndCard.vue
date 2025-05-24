@@ -4,8 +4,8 @@
         <p class="text-base mb-6 text-gray-600">感谢您的使用，任务已圆满完成！</p>
         <slot>
             <button
-                class="px-6 py-2 text-base bg-blue-500 text-white rounded-md hover:bg-blue-700 transition"
-                @click=""
+                class="px-6 py-2 mr-5 text-base bg-blue-500 text-white rounded-md hover:bg-blue-700 transition"
+                @click="backToHome"
             >
                 返回首页
             </button>
@@ -21,9 +21,14 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
+import store from '@/store';
 
 const router = useRouter();
 
+const backToHome = () => {
+  store.commit('resetState')
+  router.push('/')
+}
 
 const over = () => {
     router.push('/over');

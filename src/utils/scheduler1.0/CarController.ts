@@ -100,8 +100,11 @@ export class CarController {
         this.stopPoints = []
         this.currentStopIndex = 0
         // 卸货后自动触发目标设备的下一个任务
+        console.log(this.portTo)
+
         if (this.portTo) {
           this.portTo.onMaterialPlaced(materialId)
+          console.log('get')
         }
         this.hasMaterial = false
         this.scheduler?.dropOffCargo(taskId)
@@ -128,15 +131,15 @@ export class CarController {
         const deviceId = this.currentStopIndex === 0 ? this.task?.fromDevice : this.task?.toDevice
         const device = this.deviceMap.get(deviceId!)
 
-        if (!device && !this.task) {
-          // 巡航模式：到达终点后状态设为idle
-          this.status = 'idle'
-          this.targetSpeed = 0
-          this.stopPoints = []
-          this.currentStopIndex = 0
+        // if (!device && !this.task) {
+        //   // 巡航模式：到达终点后状态设为idle
+        //   this.status = 'idle'
+        //   this.targetSpeed = 0
+        //   this.stopPoints = []
+        //   this.currentStopIndex = 0
 
-          return
-        }
+        //   return
+        // }
 
         if (!device) return
 
@@ -156,7 +159,11 @@ export class CarController {
 
         // STEP 2：卸货点是否能接收
         else if (this.currentStopIndex === 1) {
+          console.log('卸货点')
+
           if (device.status === 'idle') {
+            console.log('卸货点空闲')
+
             this.status = 'unloading'
             this.unloadingTimer = 0
             // 卸货时将物料ID放到目标设备
@@ -286,7 +293,7 @@ export class CarController {
     const dist = Math.abs(
       ((this.position - target + this.trackLength / 2) % this.trackLength) - this.trackLength / 2,
     )
-    return dist < 0.05
+    return dist < 0.1
   }
 
   // 设置目标点

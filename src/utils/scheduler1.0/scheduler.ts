@@ -480,7 +480,6 @@ export class Scheduler {
 
     if (allTasksDone && allCarsIdle && allDevicesIdle) {
       this.isTasksOver = true
-
       return true
     }
     return false

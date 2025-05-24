@@ -32,7 +32,7 @@
 import { BasicShadowMap, SRGBColorSpace, NoToneMapping } from 'three'
 import { TresCanvas } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
-import { inittrackinner, inittrackout, inittrackocar } from '@/utils/senseData'
+import {  inittrackocar } from '@/utils/senseData'
 import { getDeviceMap, getAllDevices } from '@/utils/scheduler1.0/PortDevice'
 import { onMounted, computed, shallowRef, ref } from 'vue'
 import { CarController } from '@/utils/scheduler1.0/CarController'
@@ -180,7 +180,7 @@ setInterval(() => {
 
 // 动画循环
 function animate(current: number) {
-  if (isTaskOver.value) {
+  if (isTaskOver.value && taskCount.value != 1) {
     return
   }
   const delta = 0.016 // 秒
