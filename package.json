@@ -27,6 +27,7 @@
     "vuex": "^4.0.2"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.5.0",
     "@tsconfig/node22": "^22.0.1",
     "@types/node": "^22.14.0",
     "@types/three": "^0.176.0",

@@ -46,13 +46,13 @@ export class PortDevice {
     
     // 根据类型自动开始装/卸货，并使用不同的时间
     if (this.type === 'inlet') {
-      this.startOperation('loading', 3)
+      this.startOperation('loading', 30)
     } else if (this.type === 'out-interface') {
-      this.startOperation('loading', 5)
+      this.startOperation('loading', 50)
     } else if (this.type === 'in-interface' && this.status === 'idle') {
-      this.startOperation('unloading', 2)
+      this.startOperation('unloading', 25)
     } else if (this.type === 'outlet' && this.status === 'idle') {
-      this.startOperation('unloading', 3)
+      this.startOperation('unloading', 30)
     }
   }
   // 新增：更新设备状态
@@ -106,9 +106,9 @@ export class PortDevice {
       this.status = 'full'
       this.currentMaterialId = materialId
       if (this.type === 'in-interface' && this.status === 'full') {
-        this.startOperation('unloading', 2) // 入口接口卸货25秒（取走）
+        this.startOperation('unloading', 25) // 入口接口卸货25秒（取走）
       } else if (this.type === 'outlet' && this.status === 'full') {
-        this.startOperation('unloading', 3) // 出库口卸货30秒
+        this.startOperation('unloading', 30) // 出库口卸货30秒
       }
     }
   }
