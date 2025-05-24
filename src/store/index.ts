@@ -5,7 +5,7 @@ import { Scheduler } from '@/utils/scheduler1.0/scheduler'
 // 定义数据类型
 export interface TaskItem {
   taskId: number
-  materialId: number
+  materialId: string
   type: string
   fromDevice: number
   toDevice: number
@@ -17,7 +17,7 @@ export default createStore({
     testList: [
       {
         taskId: 1,
-        materialId: 101,
+        materialId: '101',
         type: '出库',
         fromDevice: 17,
         toDevice: 1,
@@ -31,7 +31,8 @@ export default createStore({
     taskData: [],
     task: 2,
     speedvalue: 1,
-    deviceMap: []
+    deviceMap: [],
+    carSpeedTable: []
   },
   mutations: {
     setTestList(state: { testList: TaskItem[] }, value: TaskItem[]) {
@@ -68,6 +69,9 @@ export default createStore({
     },
     setDeviceMap(state: { deviceMap: any[] }, value: any) {
       state.deviceMap = value
+    },
+    addCarSpeedTable(state: { carSpeedTable: any[] }, value: any) {
+      state.carSpeedTable.push(value)
     }
   },
   getters: {

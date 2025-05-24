@@ -44,6 +44,10 @@ import Track from './tres/Track.vue'
 import Station from './tres/Station.vue'
 import EndCard from './EndCard.vue'
 
+
+// 
+const addCarSpeedTable = (value: any) => store.commit('addCarSpeedTable', value)
+
 //轨道设置函数
 const trackPoints = inittrackocar()
 const carCount = computed(() => store.state.carCount)
@@ -144,6 +148,7 @@ const speedValue = computed(() => store.state.speedvalue)
 // 给小车调度器
 controllers.forEach((car: any) => {
   car.setScheduler(scheduler)
+  car.addCarSpeedTable = addCarSpeedTable
 })
 // 给设备调度器
 deviceMap.forEach((device: any) => {
@@ -175,6 +180,9 @@ setInterval(() => {
 
 // 动画循环
 function animate(current: number) {
+  if (isTaskOver.value) {
+    return
+  }
   const delta = 0.016 // 秒
   lastTime = current
   scheduler.update(delta) // 移动 + 装卸 + 状态更新

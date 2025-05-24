@@ -67,7 +67,7 @@ function updateChart() {
   if (!Array.isArray(speedTable) || speedTable.length === 0) return
 
   // 只取后10个数据
-  const lastData = speedTable.slice(-10)
+  const lastData = speedTable
 
   // 1. 获取所有 carId
   const carIdSet = new Set<number>()
@@ -110,15 +110,8 @@ function updateChart() {
 
 onMounted(() => {
   const scheduler = computed(() => store.getters.scheduler)
-  const updateTestList = () => {
-    if (scheduler.value.checkIfAllTasksDone()) return
-    const speedlists = scheduler.value.getCarsSpeedTimeline()
-    addSpeedTable(speedlists)
-    
-  }
 
   // 每秒执行一次 updateTestList
-  setInterval(updateTestList, 1000)
   initChart()
   timer = window.setInterval(updateChart, 1000)
   window.addEventListener('resize', resizeChart)

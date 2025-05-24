@@ -1,8 +1,6 @@
 import type { CarTask } from '@/types'
 import type { PortDevice } from './PortDevice.ts'
 
-
-
 // 小车控制器类
 export class CarController {
   public id: number // 小车ID
@@ -21,6 +19,7 @@ export class CarController {
   private currentStopIndex = 0 // 当前停靠点索引
   public hasMaterial: boolean = false // 是否有货
   private scheduler: any // 调度器引用
+  public addCarSpeedTable: (value: any) => void = () => {} // 添加小车速度表的函数
 
   // 弯道区间
   private curveRanges: [number, number][] = [
@@ -115,7 +114,6 @@ export class CarController {
     if (this.status === 'moving' || this.status === 'cruising' || this.status === 'waiting') {
       // 到达目标点且速度为0
       if (this.reachedTarget() && this.speed === 0) {
-
         if (this.status === 'cruising') {
           // 到达一圈终点后继续巡航
           this.stopPoints = [(this.position + this.trackLength) % this.trackLength]
@@ -144,7 +142,6 @@ export class CarController {
 
         // STEP 1：装货点检查设备状态和物料ID
         if (this.currentStopIndex === 0) {
-
           if (device.status === 'full' && device.currentMaterialId === this.task?.materialId) {
             this.status = 'loading'
             this.loadingTimer = 0
@@ -236,11 +233,35 @@ export class CarController {
     let target = Math.min(this.targetSpeed, maxSpeed)
     if (this.speed < target) {
       this.speed = Math.min(this.speed + 0.5 * dt, target)
+      if (this.acceleration != 0.5) {
+        this.addCarSpeedTable({
+          id: this.id,
+          speed: Number(this.speed.toFixed(2)),
+          acceleration: 0.5,
+          time: Math.round(this.scheduler?.getTime() || 0),
+        })
+      }
       this.acceleration = 0.5
     } else if (this.speed > target) {
       this.speed = Math.max(this.speed - 0.5 * dt, target)
+      if (this.acceleration != -0.5) {
+        this.addCarSpeedTable({
+          id: this.id,
+          speed: Number(this.speed.toFixed(2)),
+          acceleration: -0.5,
+          time: Math.round(this.scheduler?.getTime() || 0),
+        })
+      }
       this.acceleration = -0.5
     } else {
+      if (this.acceleration != 0) {
+        this.addCarSpeedTable({
+          id: this.id,
+          speed: Number(this.speed.toFixed(2)),
+          acceleration: 0,
+          time: Math.round(this.scheduler?.getTime() || 0),
+        })
+      }
       this.acceleration = 0
     }
 

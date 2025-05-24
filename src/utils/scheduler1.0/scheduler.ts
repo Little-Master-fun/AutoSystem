@@ -1,6 +1,7 @@
 import { CarController } from './CarController'
 import type { CarTask } from '@/types'
 import { PortDevice } from './PortDevice'
+import store from '@/store'
 
 type Assignment = {
   car: CarController
@@ -15,7 +16,7 @@ export type TaskStatus = 'waiting' | 'in-progress' | 'done'
 
 export interface TaskDetail {
   taskId: number
-  materialId: number
+  materialId: string
   type: string
   fromDevice: number
   toDevice: number
@@ -142,7 +143,7 @@ export class Scheduler {
         // 记录任务分配（用 assignedTasks 以 carId 为 key 也存一份）
         this.assignedTasks.set(Number(task.taskId), {
           taskId: Number(task.taskId),
-          materialId: Number(task.materialId),
+          materialId: String(task.materialId),
           type: task.type,
           fromDevice: Number(task.fromDevice),
           toDevice: Number(task.toDevice),
@@ -210,7 +211,7 @@ export class Scheduler {
 
   // 完成任务
   // 通过任务ID或物料ID完成任务
-  public completeTask(taskIdOrMaterialId: number | undefined, byMaterialId = false) {
+  public completeTask(taskIdOrMaterialId: number | string, byMaterialId = false) {
     let taskDetail: TaskDetail | undefined
     let taskId: number | undefined
 
@@ -419,6 +420,23 @@ export class Scheduler {
     }
   }
 
+  // 获取已完成任务
+  public getCompletedTaskDetails() {
+    return Array.from(this.completedTasks.values()).map((task) => ({
+      taskId: task.taskId,
+      materialId: task.materialId,
+      type: task.type,
+      fromDevice: task.fromDevice,
+      toDevice: task.toDevice,
+      createTime: task.createTime,
+      startTime: task.startTime,
+      carId: task.carId,
+      pickUpTime: task.pickUpTime,
+      dropOffTime: task.dropOffTime,
+      takenTime: task.takenTime,
+      status: task.status,
+    }))
+  }
   // 计算小车到达目标位置的时间（考虑加速时间）
   private calculateTimeToTarget(car: CarController, targetPos: number): number {
     // 直接计算当前位置到目标位置的距离
@@ -462,6 +480,7 @@ export class Scheduler {
 
     if (allTasksDone && allCarsIdle && allDevicesIdle) {
       this.isTasksOver = true
+
       return true
     }
     return false

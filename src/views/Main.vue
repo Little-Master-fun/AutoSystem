@@ -27,12 +27,16 @@
       <div class="absolute bottom-0 left-5 text-cyan-400" style="font-family: tel">
         <p>当前时间：{{ time }}</p>
       </div>
-      <button class="absolute right-5 bottom-0 text-white" @click="speedUp">
-        <p>加速</p>
-      </button>
-      <button class="absolute right-20 bottom-0 text-white" @click="speedDown">
-        <p>减速</p>
-      </button>
+      <div class="absolute right-5 bottom-0 flex gap-2 items-center text-cyan-400">
+        <button class="cursor-pointer" @click="speedDown">
+          <el-icon><DArrowLeft /></el-icon>
+        </button>
+
+        <p class=" text-[16px]">X{{ speedCount }}</p>
+        <button class="cursor-pointer" @click="speedUp">
+          <el-icon><DArrowRight /></el-icon>
+        </button>
+      </div>
     </div>
     <!-- 第二行 -->
     <div class="flex justify-center items-center w-full mt-4 flex-col">
@@ -69,14 +73,19 @@ import chart12 from '@/components/charts/chart1-2.vue'
 import chart13 from '@/components/charts/chart1-3.vue'
 import store from '@/store'
 import { computed, onMounted, ref } from 'vue'
+import { DArrowRight, DArrowLeft } from '@element-plus/icons-vue'
 
 const time = ref<any>(0)
 const scheduler = computed(() => store.getters.scheduler)
 const setspeed = (value: any) => store.commit('setSpeedValue', value)
 const speedCount = ref(1)
 
+
 const speedUp = () => {
   speedCount.value += 1
+  if (speedCount.value == 1.5) {
+    speedCount.value = 1
+  }
   if (speedCount.value > 8) {
     speedCount.value = 8
   }
@@ -86,7 +95,7 @@ const speedUp = () => {
 const speedDown = () => {
   speedCount.value -= 1
   if (speedCount.value < 1) {
-    speedCount.value = 1
+    speedCount.value = 0.5
     scheduler.value.setAccelerationTime(0.5)
   }
 }

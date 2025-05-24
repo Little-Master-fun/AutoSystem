@@ -12,7 +12,7 @@ export class PortDevice {
   // 新增：任务队列和当前物料ID
   private taskQueue: number[] = []
   public currentMaterialId: number | null = null
-  public scheduler: any = null // 任务调度器（可选）
+  public scheduler: any = null // 任务调度器
 
 
   constructor(id: number, type: PortType, position: number) {
@@ -76,6 +76,8 @@ export class PortDevice {
     if ((this.type === 'outlet' || this.type === 'in-interface') && this.status === 'unloading') {
       this.hasCargo = false
       this.status = 'idle'
+      console.log(this.currentMaterialId);
+      
       this.scheduler?.completeTask(this.currentMaterialId, true) // 调用调度器完成任务
       
       this.currentMaterialId = null // 物料被取走

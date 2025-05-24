@@ -13,6 +13,11 @@ const router = createRouter({
       name: 'scene',
       component: () => import('../views/Main.vue'),
     },
+    {
+      path: '/over',
+      name: 'over',
+      component: () => import('../views/Complete.vue'),
+    },
   ],
 })
 

@@ -36,8 +36,8 @@
       >
     </div>
   </div>
-    <TestCar v-if="visCar" :changeVis="changeVis" />
-
+  <TestCar v-if="visCar" :changeVis="changeVis" />
+  <Task2Card v-if="task2Card" :changeVis="changeVis2"></Task2Card>
 </template>
 
 <script setup lang="ts">
@@ -46,17 +46,17 @@ import { ref } from 'vue'
 import { task2 } from '@/utils/senseData'
 import store from '@/store'
 import { useRouter } from 'vue-router'
-
+import Task2Card from '@/components/Task2Card.vue'
 
 const router = useRouter()
 const setTast = (value: any) => store.commit('setTestList', value)
 const setCarCount = (value: any) => store.commit('setCarCount', value)
 const settaskcont = (value: any) => store.commit('setTask', value)
+const task2Card = ref(false)
+
 
 const test2Start = () => {
-  setTast(task2)
-  setCarCount(2)
-  router.push('/scene')
+  task2Card.value = true
 }
 const test1Start = () => {
   setTast([])
@@ -64,7 +64,9 @@ const test1Start = () => {
   settaskcont(1)
   router.push('/scene')
 }
-
+const changeVis2 = (val: boolean) => {
+  task2Card.value = val
+}
 
 const visCar = ref(false)
 const changeVis = (val: boolean) => {
