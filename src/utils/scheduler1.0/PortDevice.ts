@@ -14,7 +14,6 @@ export class PortDevice {
   public currentMaterialId: number | null = null
   public scheduler: any = null // 任务调度器
 
-
   constructor(id: number, type: PortType, position: number) {
     this.id = id
     this.type = type
@@ -23,7 +22,6 @@ export class PortDevice {
 
   public setScheduler(scheduler: any) {
     this.scheduler = scheduler
-    
   }
 
   // 新增：添加任务（物料ID）
@@ -31,6 +29,12 @@ export class PortDevice {
     this.taskQueue.push(materialId)
     // 如果当前没有物料且设备空闲，自动开始下一个任务
     if (!this.currentMaterialId && this.isAvailable()) {
+      // 第一个任务时直接上好货
+      this.currentMaterialId = this.taskQueue.shift() || null
+      this.hasCargo = true
+      this.status = 'full'
+      // 等待小车取走，取走后再自动下一个
+    } else if (!this.currentMaterialId && this.isAvailable()) {
       this.startNextTask()
     }
   }
@@ -62,7 +66,6 @@ export class PortDevice {
       if (this.timer <= 0) {
         this.timer = 0
         this.finishOperation()
-        
       }
     }
   }
@@ -77,9 +80,7 @@ export class PortDevice {
       this.hasCargo = false
       this.status = 'idle'
       console.log(this.currentMaterialId);
-      
       this.scheduler?.completeTask(this.currentMaterialId, true) // 调用调度器完成任务
-      
       this.currentMaterialId = null // 物料被取走
       this.startNextTask() // 自动开始下一个任务
     }
