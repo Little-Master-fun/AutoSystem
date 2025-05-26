@@ -26,11 +26,13 @@
       <dv-decoration-10 style="width: 20%; height: 5px; transform: rotate(180deg)" />
       <div class="absolute left-2 bottom-0">
         <el-radio-group v-model="carTable" fill="#6cf">
-          <el-radio-button label="小车" value=true />
-          <el-radio-button label="任务" value=false />
+          <el-radio-button label="小车" value="true" />
+          <el-radio-button label="任务" value="false" />
         </el-radio-group>
       </div>
-      <el-button class="absolute right-2 bottom-0" type="primary" @click="backToHome">返回首页</el-button>
+      <el-button class="absolute right-2 bottom-0" type="primary" @click="backToHome"
+        >返回首页</el-button
+      >
     </div>
     <!-- 小车速度 -->
     <div class="flex items-center w-full mt-4 flex-col h-[90%]" v-if="carTable == 'true'">
@@ -167,7 +169,6 @@ import store from '@/store'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-
 const addSpeedTable = (value: any) => store.commit('addSpeedTable', value)
 const getSpeedTable = computed(() => store.state.speedTable)
 let chart: echarts.ECharts | null = null
@@ -236,14 +237,13 @@ function updateChart() {
     },
   })
 }
+const updateTestList = () => {
+  const speedlists = scheduler.value?.getCarsSpeedTimeline()
+  addSpeedTable(speedlists)
+}
+updateTestList()
 
 onMounted(() => {
-  const scheduler = computed(() => store.getters.scheduler)
-  const updateTestList = () => {
-    const speedlists = scheduler.value?.getCarsSpeedTimeline()
-    addSpeedTable(speedlists)
-  }
-  updateTestList()
   // 每秒执行一次 updateTestList
   timer = window.setInterval(updateChart, 1000)
   window.addEventListener('resize', resizeChart)

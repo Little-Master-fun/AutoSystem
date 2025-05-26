@@ -1,5 +1,6 @@
 import type { CarTask } from '@/types'
 import type { PortDevice } from './PortDevice.ts'
+import store from '@/store'
 
 type CarStatus = 'idle' | 'moving' | 'loading' | 'loaded' | 'unloading' | 'waiting' | 'cruising'
 
@@ -57,6 +58,13 @@ export class CarController {
         this.setTarget(this.stopPoints[1])
         this.status = 'moving'
         this.hasMaterial = true
+        store.commit('addDeviceChangeStatus',{
+          devicename: '穿梭车',
+          deviceId: this.id || '',
+          materialId: (this.task as CarTask)?.materialId || '',
+          status: '无货->有货',
+          timestamp: Math.round(this.scheduler?.getTime() || 0)
+        })
         this.scheduler?.pickUpCargo(this.task?.taskId || 0)
       }
       return
@@ -73,6 +81,14 @@ export class CarController {
         this.currentStopIndex = 0
         if (this.portTo) this.portTo.onMaterialPlaced(materialId)
         this.hasMaterial = false
+          store.commit('addDeviceChangeStatus',{
+          devicename: '穿梭车',
+          deviceId: this.id || '',
+          materialId: materialId || '',
+          status: '有货->无货',
+          timestamp: Math.round(this.scheduler?.getTime() || 0)
+        })
+
         this.scheduler?.dropOffCargo(taskId)
       }
       return
@@ -114,12 +130,26 @@ export class CarController {
           if (device.status === 'full' && device.currentMaterialId === this.task?.materialId) {
             this.status = 'loading'
             this.loadingTimer = 0
+            store.commit('addDeviceChangeStatus',{
+            devicename: '穿梭车',
+            deviceId: this.id || '',
+            materialId: this.task?.materialId || '',
+            status: '无货->有货',
+            timestamp: Math.round(this.scheduler?.getTime() || 0)
+          })
             device.onMaterialTaken()
           }
         } else if (this.currentStopIndex === 1) {
           if (device.status === 'idle') {
             this.status = 'unloading'
             this.unloadingTimer = 0
+            store.commit('addDeviceChangeStatus',{
+            devicename: '穿梭车',
+            deviceId: this.id || '',
+            materialId: this.task?.materialId || '',
+            status: '有货->无货',
+            timestamp: Math.round(this.scheduler?.getTime() || 0)
+          })
             device.currentMaterialId = this.task?.materialId || null
           }
         }

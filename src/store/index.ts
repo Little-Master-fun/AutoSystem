@@ -12,6 +12,14 @@ export interface TaskItem {
   createTime: number
 }
 
+export interface DeviceChangeStatus {
+  devicenme: string
+  deviceId: string
+  materialId: string
+  status: string
+  timestamp: number
+}
+
 const getDefaultState = () => ({
   testList: [
     {
@@ -21,7 +29,7 @@ const getDefaultState = () => ({
       fromDevice: 17,
       toDevice: 1,
       createTime: Date.now(),
-    }
+    },
   ] as TaskItem[],
   carCount: 1,
   controllers: [] as CarController[],
@@ -31,7 +39,8 @@ const getDefaultState = () => ({
   task: 2,
   speedvalue: 1,
   deviceMap: [],
-  carSpeedTable: []
+  carSpeedTable: [],
+  allDeviceChangeStatus: [] as DeviceChangeStatus[],
 })
 
 export default createStore({
@@ -77,6 +86,9 @@ export default createStore({
     },
     resetState(state: any) {
       Object.assign(state, getDefaultState())
+    },
+    addDeviceChangeStatus(state: { allDeviceChangeStatus: any[] }, value: any) {
+      state.allDeviceChangeStatus.push(value)
     },
   },
   getters: {

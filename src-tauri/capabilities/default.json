@@ -6,6 +6,15 @@
     "main"
   ],
   "permissions": [
-    "core:default"
+    "core:default",
+    "fs:default",
+    "fs:allow-write-text-file",
+    "fs:allow-app-write",
+    "fs:allow-desktop-read-recursive",
+    "fs:allow-desktop-write",
+    {
+      "identifier": "fs:allow-exists",
+      "allow": [{ "path": "$DeskTop/*" }]
+    }
   ]
 }
