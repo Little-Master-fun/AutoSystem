@@ -32,6 +32,7 @@ declare module 'vue' {
     Sense: typeof import('./src/components/Sense.vue')['default']
     Station: typeof import('./src/components/tres/Station.vue')['default']
     Task2Card: typeof import('./src/components/Task2Card.vue')['default']
+    Task3Card: typeof import('./src/components/Task3Card.vue')['default']
     TestCar: typeof import('./src/components/TestCar.vue')['default']
     Track: typeof import('./src/components/tres/Track.vue')['default']
   }

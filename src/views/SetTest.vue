@@ -30,6 +30,13 @@
       <dv-button
         :bg="false"
         border="Border6"
+        @click="changeVis3(true)"
+        class="transition-transform duration-200 hover:scale-105"
+        >任务二Plus</dv-button
+      >
+      <dv-button
+        :bg="false"
+        border="Border6"
         @click="visCar = !visCar"
         class="transition-transform duration-200 hover:scale-105"
         >自定义任务</dv-button
@@ -38,6 +45,7 @@
   </div>
   <TestCar v-if="visCar" :changeVis="changeVis" />
   <Task2Card v-if="task2Card" :changeVis="changeVis2"></Task2Card>
+  <Task3Card v-if="task3Card" :changeVis="changeVis3"></Task3Card>
 </template>
 
 <script setup lang="ts">
@@ -47,13 +55,14 @@ import { task2 } from '@/utils/senseData'
 import store from '@/store'
 import { useRouter } from 'vue-router'
 import Task2Card from '@/components/Task2Card.vue'
+import Task3Card from '@/components/Task3Card.vue'
 
 const router = useRouter()
 const setTast = (value: any) => store.commit('setTestList', value)
 const setCarCount = (value: any) => store.commit('setCarCount', value)
 const settaskcont = (value: any) => store.commit('setTask', value)
 const task2Card = ref(false)
-
+const task3Card = ref(false)
 
 const test2Start = () => {
   task2Card.value = true
@@ -66,6 +75,9 @@ const test1Start = () => {
 }
 const changeVis2 = (val: boolean) => {
   task2Card.value = val
+}
+const changeVis3 = (val: boolean) => {
+  task3Card.value = val
 }
 
 const visCar = ref(false)
